@@ -1,4 +1,5 @@
 package tetris.agent;
+import tetris.simulator.SimState;
 import tetris.simulator.State;
 
 
@@ -20,7 +21,7 @@ public class Agent {
 	public int chooseAction(State s, int[][] legalMoves) 
 	{		
 		//example random agent
-		return pi.get_action(s); 
+		return pi.get_action(new SimState(s)).index; 
 		//return random action
 //		return (int)(Math.random()*legalMoves.length);
 	}
