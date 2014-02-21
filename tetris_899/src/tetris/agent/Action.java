@@ -1,25 +1,26 @@
 package tetris.agent;
 
+import tetris.simulator.State;
+
+/** A simple immutable class representing an action comprised of a move index. 
+ * The fields are public gettable for convenience but not settable.
+ * @author Humhu
+ */
 public class Action {
 
-		private int _orientation, _position;
+		final public int index;
 		
-		public Action(int[] move)
+		public Action(int ind)
 		{
-			this(move[0], move[1]);
-		}
-		public Action(int orientation, int position)
-		{
-			_orientation = orientation;
-			_position = position;
-		}
-		public int getOrientation()
-		{
-			return _orientation;
+			index = ind;
 		}
 		
-		public int getPosition()
-		{
-			return _position;
+		/** 
+		 * Apply this action to a state. This changes the state!
+		 * @param state - The state to apply the action to.
+		 */
+		public void Apply(State state) {
+			state.makeMove(index);
 		}
+
 }
