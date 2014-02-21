@@ -48,7 +48,6 @@ public class GradientPolicy implements Policy {
 		int[][] moves = s.legalMoves();
 		SimpleMatrix probs = new SimpleMatrix(moves.length, 1);
 		// Evaluate function for all actions
-		double denominator = 0.0;
 		for (int a_prime = 0; a_prime < probs.numRows(); a_prime++) {
 			probs.set(a_prime, function_evaluator(s, new Action(a_prime)) );
 		}

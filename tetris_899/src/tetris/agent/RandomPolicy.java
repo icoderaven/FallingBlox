@@ -16,8 +16,8 @@ public class RandomPolicy implements Policy {
 	}
 	
 	@Override
-	public void fit_policy(Trajectory t) {
-		//Do nothing - We're random
+	public void fit_policy(Trajectory[] t) {
+		// Do Nothing. We're random.		
 	}
 
 	@Override
