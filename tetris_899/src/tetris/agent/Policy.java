@@ -10,7 +10,7 @@ public interface Policy {
 	public void fit_policy(State s_t[], Action a_t[], State s_tplus[]);
 
 	//Method to calculate the prob of action given a state action tuple
-	public double pi(State s, Action a);
+	public double pi(SimState s, Action a);
 	
 	//Method to return the gradient wrt parameter
 	public double[] gradient(State s, Action a);

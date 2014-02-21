@@ -18,4 +18,16 @@ public class RandomPolicy implements Policy {
 		//Do nothing - We're random
 	}
 
+	@Override
+	public double pi(State s, Action a) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public double[] gradient(State s, Action a) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

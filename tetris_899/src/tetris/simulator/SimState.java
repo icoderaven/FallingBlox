@@ -22,4 +22,8 @@ public class SimState extends State {
 		set_next_piece(piece);
 	}
 	
+	public int get_n_pieces()
+	{
+		return N_PIECES;
+	}
 }
