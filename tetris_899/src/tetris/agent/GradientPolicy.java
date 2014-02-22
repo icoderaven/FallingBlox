@@ -23,20 +23,20 @@ public class GradientPolicy implements Policy {
 		_params = other._params;
 	}
 	
-	// TODO HH - This is totally wrong. It needs to sample.
 	@Override
-	public Action get_action(SimState curr_state) {
-		//Return the action with the highest probability
+	public Action get_action(State curr_state) {
+		//Obtain the distribution of probabilities for the current action 
 		SimpleMatrix dist = pi(curr_state);
-		int index =0;
-		double max = 0.0;
-		for(int i=0;i<dist.numRows();i++)
-		{
-			double val = dist.get(i);
-			if (max > val)
-			{
-				max = val;
+		
+		int index = dist.numRows()-1;
+		//Get a random number sampled from the uniform distribution  
+		double u = Math.random(), cdf = 0.0;
+		//Move till the running total exceeds this probability value
+		for(int i=0; i<dist.numRows(); i++){
+			cdf+=dist.get(i);
+			if (u <= cdf){
 				index = i;
+				break;
 			}
 		}
 		return new Action(index);
@@ -45,16 +45,17 @@ public class GradientPolicy implements Policy {
 	@Override
 	public void fit_policy(Trajectory[] t) {
 		//TODO Average gradient over trajectories
+		
 	}
 
 	@Override
-	public double pi(SimState s, Action a) {
+	public double pi(State s, Action a) {
 		SimpleMatrix dist = pi(s);
 		return dist.get(a.index);
 	}
 	
 	@Override
-	public SimpleMatrix pi(SimState s) {
+	public SimpleMatrix pi(State s) {
 		/// For current piece get all possible actions
 		int[][] moves = s.legalMoves();
 		SimpleMatrix probs = new SimpleMatrix(moves.length, 1);
@@ -70,7 +71,7 @@ public class GradientPolicy implements Policy {
 	}
 
 	@Override
-	public SimpleMatrix gradient(SimState s, Action a) {
+	public SimpleMatrix gradient(State s, Action a) {
 		SimpleMatrix J_for_a = _feature.get_feature_vector(s, a);
 		SimpleMatrix pi_for_s = pi(s);
 		//Each feature vector gets one column
@@ -88,10 +89,8 @@ public class GradientPolicy implements Policy {
 
 	@Override
 	public Policy copy() {
-		// TODO Auto-generated method stub
-		return null;
+		return new GradientPolicy(this);
 	}
-
 
 
 }

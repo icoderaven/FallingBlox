@@ -7,7 +7,7 @@ import tetris.simulator.*;
 public class RandomPolicy implements Policy {
 	
 	@Override
-	public Action get_action(SimState curr_state) {
+	public Action get_action(State curr_state) {
 		// return random action
 		int[][] moves =  curr_state.legalMoves();
 		//Get a random move from list of moves nx2
@@ -16,25 +16,20 @@ public class RandomPolicy implements Policy {
 		return new Action(move_index);
 	}
 	
+
 	@Override
-	public void fit_policy(Trajectory[] t) {
-		// Do Nothing. We're random.		
+	public double pi(State s, Action a) {
+		return 1.0;
 	}
 
 	@Override
-	public double pi(SimState s, Action a) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public SimpleMatrix gradient(SimState s, Action a) {
+	public SimpleMatrix gradient(State s, Action a) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public SimpleMatrix pi(SimState s) {
+	public SimpleMatrix pi(State s) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -43,6 +38,13 @@ public class RandomPolicy implements Policy {
 	public Policy copy() {
 		Policy ret = new RandomPolicy();
 		return ret;
+	}
+
+
+	@Override
+	public void fit_policy(Trajectory[] t) {
+		// Do Nothing. We're random
+		
 	}
 
 }
