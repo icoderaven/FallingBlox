@@ -17,7 +17,7 @@ public class GradientPolicy implements Policy {
 	{
 		_feature = new DefaultFeature();
 		_params = new SimpleMatrix(_feature.get_feature_dimension(),1);
-//		_params.set(1);
+		_params.set(1);
 	}
 
 	public GradientPolicy(Feature featureGenerator, SimpleMatrix parameters) {
@@ -69,7 +69,7 @@ public class GradientPolicy implements Policy {
 			{
 				//z_{t+1} = gamma*z_{t} + gradient(s,a)
 				SimpleMatrix grad = gradient(t.tuples.get(j).state, t.tuples.get(j).action);
-//				grad.print();
+				grad.print();
 				z = z.scale(gamma).plus(grad);
 				//delta_{t+1} = delta + (1/t+1)(r_{t+1}*z_{t+1} - delta)
 				delta = delta.plus(1.0/(j+1), z.scale(t.tuples.get(j).reward).minus(delta));
@@ -113,22 +113,13 @@ public class GradientPolicy implements Policy {
 	}
 
 	public double function_evaluator(State s, Action a) {
-		SimpleMatrix temp = new SimpleMatrix(_feature.get_feature_dimension(), 1);
-		State orig_s = new State(s);
-		temp = _feature.get_feature_vector(s, a);
-		s.makeMove(a.index);
-		temp.minus(_feature.get_feature_vector(s, a));
-		
-		temp.print();
-		
-		return Math.exp(_params.dot(_feature.get_feature_vector(orig_s, a)));
+		return Math.exp(_params.transpose().dot(_feature.get_feature_vector(s, a)));
 	}
 
 	@Override
 	public SimpleMatrix gradient(State s, Action a) {
 		SimpleMatrix J_for_a = _feature.get_feature_vector(s, a);
 		SimpleMatrix pi_for_s = pi(s);
-		pi_for_s.print();
 		//Each feature vector gets one column
 		SimpleMatrix all_features = new SimpleMatrix(J_for_a.numRows(),pi_for_s.numRows());
 		
@@ -138,7 +129,7 @@ public class GradientPolicy implements Policy {
 		}
 		
 		SimpleMatrix E_for_s = all_features.mult(pi_for_s);
-		
+//		all_features.print();
 		return J_for_a.minus(E_for_s);
 	}
 

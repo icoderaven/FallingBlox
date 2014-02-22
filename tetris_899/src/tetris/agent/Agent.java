@@ -23,8 +23,8 @@ public class Agent {
 		// Example code for using trajectory generation package
 		StateGenerator stateGen = new FixedStateGenerator(s);
 //		Policy policy = new RandomPolicy();
-		RewardFunction rewardFunc = new LinesClearedReward();
-		//RewardFunction rewardFunc = new TurnsAliveReward();
+//		RewardFunction rewardFunc = new LinesClearedReward();
+		RewardFunction rewardFunc = new TurnsAliveReward();
 		TrajectoryGenerator trajGen = 
 				new FixedLengthTrajectoryGenerator(stateGen, pi, rewardFunc, 1000);
 		

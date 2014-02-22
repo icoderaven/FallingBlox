@@ -15,7 +15,7 @@ public class DefaultFeature implements Feature {
 		{
 			for(int j=0; j< s.COLS; j++)
 			{
-				temp.set(i*temp.numCols()+j ,  s.getField()[i][j]);
+				temp.set(i*s.COLS+j ,  s.getField()[i][j]);
 			}
 		}
 		
