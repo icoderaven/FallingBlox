@@ -14,7 +14,7 @@ import java.util.*;
 
 public class BoardFeature implements Feature {
 		
-	public int nFeatures = 3;
+	public int nFeatures = 9;
 	
     public SimpleMatrix get_feature_vector(State temp_s, Action a)
     {    	
@@ -35,30 +35,56 @@ public class BoardFeature implements Feature {
 
 		// Compute the features:
 		
-		// Height of tallest column
+		// Height of tallest column, shortest column
 		int[] temp = s.getTop();
-		System.out.println(Arrays.toString(temp));
 		Arrays.sort(temp);
 		int maxH = temp[temp.length-1];
+		int minH = temp[0];
 
+		// Average column height
 		// Number of "holes" -- empty slots with a full slot higher in the col
 		// Number of empty slots below the top row
 		int[] colHeight = s.getTop();
 		int nHoles = 0;
 		int nEmptyBelow = 0;
+		double totalHeight = 0.0;
+		
 		for(int i=0; i < s.COLS; i++) {
 			int h = colHeight[i];
 			SimpleMatrix col = board.extractVector(false, i);
 			int nFullCol = (int) (col.elementSum());
 			nHoles += h - nFullCol;
 			nEmptyBelow += maxH - nFullCol;
+			totalHeight += h;
 		}
+		
+		double avgH = totalHeight / s.COLS;
 
-
-		// Average column height?  Minimum column height?
-		// Average # of filled spaces in a row?  Number in top row?
-		double[][] resTemp = {{maxH}, {nHoles}, {nEmptyBelow}};
+		// Size of most-filled row, least, average (want to take average below maxH?)
+		int[] rowFill = new int[s.ROWS];
+		double totalRowFill = 0.0;
+		for(int i=0; i < s.ROWS; i++) {
+			SimpleMatrix row = board.extractVector(true, i);
+			int nFullRow = (int) (row.elementSum());
+			rowFill[i] = nFullRow;
+			totalRowFill += nFullRow;
+		}
+		Arrays.sort(rowFill);
+		int minRow = rowFill[0];
+		int maxRow = rowFill[rowFill.length - 1];
+		double avgRow = totalRowFill / s.ROWS;
+		
+		// Rows removed
+		int rGone = s.getRowsCleared();
+		
+		// Number of filled spaces in top row?
+		// Number of overhangs? (filled spot over empty spot)
+		
+		// Return the features.  Can change which features are used by 
+		// changing this array assignment and nFeatures above
+		double[][] resTemp = {{maxH, minH, nHoles, nEmptyBelow, avgH, minRow, maxRow, avgRow, rGone}};
 		SimpleMatrix res = new SimpleMatrix(resTemp);
+		res.transpose();
 		//res.print();
 		return res;
     }
