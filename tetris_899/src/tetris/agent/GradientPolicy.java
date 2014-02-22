@@ -43,9 +43,44 @@ public class GradientPolicy implements Policy {
 	}
 
 	@Override
-	public void fit_policy(Trajectory[] t) {
+	public void fit_policy(Trajectory[] t_list) {
 		//TODO Average gradient over trajectories
+		//Create a container for all the evaluated deltas
+		SimpleMatrix deltas = new SimpleMatrix(_params.numRows(), t_list.length);
 		
+		SimpleMatrix delta = new SimpleMatrix(_params.numRows(), 1);
+		SimpleMatrix z = new SimpleMatrix(t_list[0].tuples.get(0).state.legalMoves().length, 1);
+		Trajectory t;
+		double gamma = 0.1; //Constant for hysteresis of z
+		for(int i=0; i<t_list.length; i++)
+		{
+			delta.set(0);
+			z.set(0);
+			t = t_list[i];
+			//Move through every tuple in this trajectory, maintaining running averages
+			for(int j=0; j<t.tuples.size(); j++)
+			{
+				//z_{t+1} = gamma*z_{t} + gradient(s,a)
+				z = z.scale(gamma).plus(gradient(t.tuples.get(j).state, t.tuples.get(j).action));
+				//delta_{t+1} = delta + (1/t+1)(r_{t+1}*z_{t+1} - delta)
+				delta = delta.plus(1.0/(j+1), z.scale(t.tuples.get(j).reward).minus(delta));
+			}
+			//Add this to the corresponding column of the big container matrix
+			deltas.insertIntoThis(0, i, delta);
+		}
+		//Alright, now average these deltas together into our final delta
+		//Interesting idea - use the covariance of these vectors to determine how much we step along this gradient
+		SimpleMatrix mean_delta = new SimpleMatrix(_params.numRows(),1);
+		for(int i=0; i<deltas.numRows(); i++)
+		{
+			mean_delta.set(i, deltas.extractVector(true, i).elementSum());
+		}
+		mean_delta.scale(1.0/deltas.numCols());
+		
+		//Step params in this direction
+		//TODO Figure out how to be smarter about the step
+		double step = 1.0;
+		_params.plus(step, mean_delta);
 	}
 
 	@Override
