@@ -8,7 +8,7 @@ public class Agent {
 	
 	public Agent()
 	{
-		pi = new RandomPolicy();
+		pi = new GradientPolicy();
 	}
 	//implement this function to have a working system
 	//Inputs:
@@ -22,16 +22,17 @@ public class Agent {
 		
 		// Example code for using trajectory generation package
 		StateGenerator stateGen = new FixedStateGenerator(s);
-		Policy policy = new RandomPolicy();
+//		Policy policy = new RandomPolicy();
 		RewardFunction rewardFunc = new LinesClearedReward();
 		//RewardFunction rewardFunc = new TurnsAliveReward();
 		TrajectoryGenerator trajGen = 
-				new FixedLengthTrajectoryGenerator(stateGen, policy, rewardFunc, 100);
+				new FixedLengthTrajectoryGenerator(stateGen, pi, rewardFunc, 1000);
 		
 		//trajGen.get_trajectory();
 
 		TrajectoryGenerationPool trajMachine = new TrajectoryGenerationPool(8);
-		trajMachine.generate_trajectories(trajGen, 1000);
+		
+		pi.fit_policy(trajMachine.generate_trajectories(trajGen, 10));
 		
 		return pi.get_action(s).index; 
 		//return (int)(Math.random()*legalMoves.length);

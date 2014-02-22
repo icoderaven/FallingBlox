@@ -13,8 +13,8 @@ import java.util.*;
 public class BoardFeatures implements Feature {
 	
     public SimpleMatrix get_feature_vector(State s, Action a){
-	s.makeMove(a);
-	board = SimpleMatrix(s.getField());
+	s.makeMove(a.index);
+	board = new SimpleMatrix(s.getField());
 
 	// Set all nonzero values of board to 1
 	for(int i=0; i < s.ROWS; i++) {

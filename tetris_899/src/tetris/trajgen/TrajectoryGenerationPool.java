@@ -13,7 +13,6 @@ public class TrajectoryGenerationPool {
 
 	final protected ExecutorService _pool;
 	protected TrajectoryGenerator _gen;
-	protected Vector<Trajectory> _trajectories;
 	
 	/**
 	 * Create the pooled generator with a set number of worker threads.
@@ -21,7 +20,6 @@ public class TrajectoryGenerationPool {
 	 */
 	public TrajectoryGenerationPool(int numThreads) {
 		_pool = Executors.newFixedThreadPool(numThreads);
-		_trajectories = new Vector<Trajectory>();
 	}
 	
 	/**
@@ -30,11 +28,11 @@ public class TrajectoryGenerationPool {
 	 * @param numTrajectories - The number of trajectories to return
 	 * @return A Vector of Trajectories generated.
 	 */
-	public Vector<Trajectory> generate_trajectories(TrajectoryGenerator trajGen,
+	public Trajectory[] generate_trajectories(TrajectoryGenerator trajGen,
 			int numTrajectories) {
 		
 		// Prepare for computation
-		_trajectories.clear();
+		Trajectory trajectories[] = new Trajectory[numTrajectories];
 		
 		// This lightweight object allows us to asynchronously collect results
 		CompletionService<Trajectory> taskService = new ExecutorCompletionService<Trajectory>(_pool);
@@ -52,7 +50,7 @@ public class TrajectoryGenerationPool {
 				Trajectory traj = taskService.take().get();
 				rewardSum += traj.sum_rewards();
 				lengthSum += traj.tuples.size();
-				_trajectories.add(traj);
+				trajectories[i] = traj;
 				//double tick = System.currentTimeMillis();
 				//System.out.format("Completed task %d/%d, Average rate %f%n", 
 				//		i, numTrajectories, 1000*(i+1)/(tick - startTime));
@@ -72,7 +70,7 @@ public class TrajectoryGenerationPool {
 				+ " and average length %f.%n", 
 				numTrajectories, numTrajectories, 1000*(numTrajectories)/(tick - startTime),
 				rewardSum/numTrajectories, 1.0*lengthSum/numTrajectories);
-		return new Vector<Trajectory>(_trajectories);
+		return trajectories;
 		
 	}
 	

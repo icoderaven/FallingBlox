@@ -12,6 +12,13 @@ public class GradientPolicy implements Policy {
 
 	public Feature _feature;
 	private SimpleMatrix _params;
+	
+	public GradientPolicy()
+	{
+		_feature = new DefaultFeature();
+		_params = new SimpleMatrix(_feature.get_feature_dimension(),1);
+//		_params.set(1);
+	}
 
 	public GradientPolicy(Feature featureGenerator, SimpleMatrix parameters) {
 		_feature = featureGenerator;
