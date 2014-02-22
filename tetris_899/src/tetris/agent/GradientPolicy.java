@@ -56,9 +56,9 @@ public class GradientPolicy implements Policy {
 		SimpleMatrix deltas = new SimpleMatrix(_params.numRows(), t_list.length);
 		
 		SimpleMatrix delta = new SimpleMatrix(_params.numRows(), 1);
-		SimpleMatrix z = new SimpleMatrix(t_list[0].tuples.get(0).state.legalMoves().length, 1);
+		SimpleMatrix z = new SimpleMatrix(_params.numRows(), 1);
 		Trajectory t;
-		double gamma = 0.1; //Constant for hysteresis of z
+		double gamma = 0.9; //Constant for hysteresis of z
 		for(int i=0; i<t_list.length; i++)
 		{
 			delta.set(0);
@@ -68,7 +68,9 @@ public class GradientPolicy implements Policy {
 			for(int j=0; j<t.tuples.size(); j++)
 			{
 				//z_{t+1} = gamma*z_{t} + gradient(s,a)
-				z = z.scale(gamma).plus(gradient(t.tuples.get(j).state, t.tuples.get(j).action));
+				SimpleMatrix grad = gradient(t.tuples.get(j).state, t.tuples.get(j).action);
+//				grad.print();
+				z = z.scale(gamma).plus(grad);
 				//delta_{t+1} = delta + (1/t+1)(r_{t+1}*z_{t+1} - delta)
 				delta = delta.plus(1.0/(j+1), z.scale(t.tuples.get(j).reward).minus(delta));
 			}
@@ -87,6 +89,7 @@ public class GradientPolicy implements Policy {
 		//Step params in this direction
 		//TODO Figure out how to be smarter about the step
 		double step = 1.0;
+//		mean_delta.print();
 		_params.plus(step, mean_delta);
 	}
 
@@ -102,6 +105,7 @@ public class GradientPolicy implements Policy {
 		int[][] moves = s.legalMoves();
 		SimpleMatrix probs = new SimpleMatrix(moves.length, 1);
 		// Evaluate function for all actions
+		
 		for (int a_prime = 0; a_prime < probs.numRows(); a_prime++) {
 			probs.set(a_prime, function_evaluator(s, new Action(a_prime)) );
 		}
@@ -109,13 +113,22 @@ public class GradientPolicy implements Policy {
 	}
 
 	public double function_evaluator(State s, Action a) {
-		return Math.exp(_params.dot(_feature.get_feature_vector(s, a)));
+		SimpleMatrix temp = new SimpleMatrix(_feature.get_feature_dimension(), 1);
+		State orig_s = new State(s);
+		temp = _feature.get_feature_vector(s, a);
+		s.makeMove(a.index);
+		temp.minus(_feature.get_feature_vector(s, a));
+		
+		temp.print();
+		
+		return Math.exp(_params.dot(_feature.get_feature_vector(orig_s, a)));
 	}
 
 	@Override
 	public SimpleMatrix gradient(State s, Action a) {
 		SimpleMatrix J_for_a = _feature.get_feature_vector(s, a);
 		SimpleMatrix pi_for_s = pi(s);
+		pi_for_s.print();
 		//Each feature vector gets one column
 		SimpleMatrix all_features = new SimpleMatrix(J_for_a.numRows(),pi_for_s.numRows());
 		
