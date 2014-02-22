@@ -8,21 +8,32 @@ import tetris.simulator.State;
  * @author Humhu
  *
  */
-public class TurnsAliveReward implements RewardFunction {
-
-	protected double _weight;
+public class TurnsAliveReward extends RewardFunction {
 	
-	public TurnsAliveReward() {
-		_weight = 1.0;
-	}
+	// Default constructor with unit weight
+	public TurnsAliveReward() {}
 	
+	// Constructor with specified weight
 	public TurnsAliveReward(double weight) {
-		_weight = weight;
+		super(weight);
 	}
 	
-	@Override
-	public double GetReward(State state, Action action) {
-		return _weight*state.getTurnNumber();
+	// Copy constructor
+	public TurnsAliveReward(TurnsAliveReward other) {
+		super(other);
+	}
+	
+	/**
+	 * Calculates the reward based on the turn number of the state
+	 */
+	protected double calculate_reward(State state, Action action) {
+		return state.getTurnNumber();
+	}
+
+	// Returns a deep copy
+	public RewardFunction copy() {
+		RewardFunction ret = new TurnsAliveReward(this);
+		return ret;
 	}
 
 }

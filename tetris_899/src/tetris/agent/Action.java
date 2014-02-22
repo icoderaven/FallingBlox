@@ -19,7 +19,7 @@ public class Action {
 		 * Apply this action to a state. This changes the state!
 		 * @param state - The state to apply the action to.
 		 */
-		public void Apply(State state) {
+		public void apply(State state) {
 			state.makeMove(index);
 		}
 

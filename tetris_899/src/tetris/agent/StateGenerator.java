@@ -1,9 +1,12 @@
 package tetris.agent;
 import tetris.simulator.State;
 
-public interface StateGenerator {
+public abstract class StateGenerator {
 
+	// Return a deep copy of this object
+	abstract StateGenerator copy();
+	
 	// Generate a state!
-	abstract State GenerateState();
+	abstract State generate_state();
 	
 }

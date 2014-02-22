@@ -1,5 +1,4 @@
 package tetris.agent;
-import tetris.simulator.State;
 
 /** Generates trajectories up to a fixed length by running a policy. 
  * @author Humhu
@@ -15,17 +14,28 @@ public class FixedLengthTrajectoryGenerator extends TrajectoryGenerator {
 		_trajLength = length;
 	}
 	
-	public Trajectory GenerateTrajectory() {
+	public FixedLengthTrajectoryGenerator(FixedLengthTrajectoryGenerator other) {
+		super(other);
+		_trajLength = other._trajLength;
+	}
+	
+	public Trajectory generate_trajectory() {
 		
-		Initialize();
+		initialize();
 		for (int i = 0; i < _trajLength; i++) {
-			Step();
+			step();
 			if (_currentState.hasLost()) {
 				break;
 			}
 		}
-		return GetTrajectory(); // This makes a deep copy
+		return get_trajectory(); // This makes a deep copy
 		
+	}
+
+	@Override
+	public TrajectoryGenerator copy() {
+		TrajectoryGenerator ret = new FixedLengthTrajectoryGenerator(this);
+		return ret;
 	}
 
 }

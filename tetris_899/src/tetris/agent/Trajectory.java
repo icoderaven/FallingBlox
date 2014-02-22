@@ -38,7 +38,13 @@ public class Trajectory {
 		}
 	}
 	
-	public boolean Add(State s, Action a, double r) {
+	// Another deep copy method to be interface consistent
+	public Trajectory copy() {
+		Trajectory ret = new Trajectory(this);
+		return ret;
+	}
+	
+	public boolean add(State s, Action a, double r) {
 		SARTuple sar = new SARTuple(s, a, r);
 		return _trajectory.add(sar);
 	}

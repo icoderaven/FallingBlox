@@ -5,6 +5,7 @@ import org.ejml.simple.SimpleMatrix;
 import tetris.simulator.*;
 
 public class RandomPolicy implements Policy {
+	
 	@Override
 	public Action get_action(SimState curr_state) {
 		// return random action
@@ -36,6 +37,12 @@ public class RandomPolicy implements Policy {
 	public SimpleMatrix pi(SimState s) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	// Return a deep copy
+	public Policy copy() {
+		Policy ret = new RandomPolicy();
+		return ret;
 	}
 
 }

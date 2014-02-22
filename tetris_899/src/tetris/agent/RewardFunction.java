@@ -8,14 +8,45 @@ import tetris.simulator.State;
  * @author Humhu
  *
  */
-public interface RewardFunction {
+public abstract class RewardFunction {
 
-	/** Calculate the reward associated with a state-action pair.
-	 * 
+	// A scaling factor applied to all outputs
+	final protected double _weight;
+	
+	// Default constructor with unit weight
+	public RewardFunction() {
+		_weight = 1.0;
+	}
+	
+	// Constructor with a specified weight
+	public RewardFunction(double weight) {
+		_weight = weight;
+	}
+	
+	// A copy constructor
+	public RewardFunction(RewardFunction other) {
+		this(other._weight);
+	}
+	
+	// Make a deep copy of this object
+	public abstract RewardFunction copy();
+	
+	/** 
+	 * Calculate the scaled reward associated with a state-action pair.
 	 * @param state - The state to calculate the reward for.
 	 * @param action - The action to calculate the reward for.
 	 * @return The reward associated with R(state, action)
 	 */
-	double GetReward(State state, Action action);
+	public double get_reward(State state, Action action) {
+		return _weight*calculate_reward(state, action);
+	}
+	
+	/**
+	 * Calculates the reward associated with a state-action pair.
+	 * @param state - The state to calculate the reward for.
+	 * @param action - The action to calculate the reward for.
+	 * @return The reward associated with R(state, action)
+	 */
+	abstract protected double calculate_reward(State state, Action action);
 	
 }

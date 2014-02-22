@@ -13,6 +13,17 @@ public class GradientPolicy implements Policy {
 	public Feature _feature;
 	private SimpleMatrix _params;
 
+	public GradientPolicy(Feature featureGenerator, SimpleMatrix parameters) {
+		_feature = featureGenerator;
+		_params = parameters;
+	}
+	
+	public GradientPolicy(GradientPolicy other) {
+		_feature = other._feature.copy();
+		_params = other._params;
+	}
+	
+	// TODO HH - This is totally wrong. It needs to sample.
 	@Override
 	public Action get_action(SimState curr_state) {
 		//Return the action with the highest probability
@@ -73,6 +84,12 @@ public class GradientPolicy implements Policy {
 		SimpleMatrix E_for_s = all_features.mult(pi_for_s);
 		
 		return J_for_a.minus(E_for_s);
+	}
+
+	@Override
+	public Policy copy() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 

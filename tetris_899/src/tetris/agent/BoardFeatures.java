@@ -11,7 +11,7 @@ import java.util.*;
  */
 
 public class BoardFeatures implements Feature {
-
+	
     public SimpleMatrix get_feature_vector(State s, Action a){
 	s.makeMove(a);
 	board = SimpleMatrix(s.getField());
@@ -47,5 +47,16 @@ public class BoardFeatures implements Feature {
 	res = [maxH];
 	return SimpleMatrix(res);
     }
+
+	// TODO Update as necessary
+	public int get_feature_dimension() {
+		return 1;
+	}
+
+	// TODO Update as necessary
+	public Feature copy() {
+		Feature ret = new BoardFeatures();
+		return ret;
+	}
 
 }

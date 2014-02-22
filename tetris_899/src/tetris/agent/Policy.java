@@ -5,6 +5,9 @@ import tetris.simulator.*;
 
 public interface Policy {
 	
+	// Return a deep copy of this object
+	public Policy copy();
+	
 	//Method to get an action given state
 	public Action get_action(SimState curr_state);
 	

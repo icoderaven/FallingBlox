@@ -8,20 +8,32 @@ import tetris.simulator.State;
  * @author Humhu
  *
  */
-public class LinesClearedReward implements RewardFunction {
-
-	final protected double _weight;
+public class LinesClearedReward extends RewardFunction {
 	
-	public LinesClearedReward() {
-		_weight = 1.0;
-	}
+	// Default constructor with unit weight
+	public LinesClearedReward() {}
 	
+	// Constructor with specified weight
 	public LinesClearedReward(double weight) {
-		_weight = weight;
+		super(weight);
 	}
 	
-	public double GetReward(State state, Action action) {
+	// Copy constructor
+	public LinesClearedReward(LinesClearedReward other) {
+		super(other);
+	}
+	
+	/**
+	 * Returns a reward based on the number of rows cleared so far in the history
+	 * of state.
+	 */
+	public double calculate_reward(State state, Action action) {
 		return _weight*state.getRowsCleared();
+	}
+
+	public RewardFunction copy() {
+		RewardFunction ret = new LinesClearedReward(this);
+		return ret;
 	}
 
 }
