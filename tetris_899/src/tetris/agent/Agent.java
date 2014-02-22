@@ -21,7 +21,7 @@ public class Agent {
 	public int chooseAction(State s, int[][] legalMoves) 
 	{		
 		//example random agent
-		return pi.get_action(s.index); 
+		return pi.get_action(s).index; 
 		//return random action
 //		return (int)(Math.random()*legalMoves.length);
 	}
