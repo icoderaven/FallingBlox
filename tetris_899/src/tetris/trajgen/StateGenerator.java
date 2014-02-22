@@ -1,4 +1,4 @@
-package tetris.agent;
+package tetris.trajgen;
 import tetris.simulator.State;
 
 public abstract class StateGenerator {

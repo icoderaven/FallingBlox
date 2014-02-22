@@ -1,4 +1,6 @@
-package tetris.agent;
+package tetris.trajgen;
+
+import tetris.agent.*;
 
 /** Generates trajectories up to a fixed length by running a policy. 
  * @author Humhu

@@ -6,35 +6,39 @@ import java.util.Vector;
 
 public class Trajectory {
 	
-	public class SARTuple implements Cloneable {
-	    public State _state;
-	    public Action _action;
-	    public double _reward;
+	public class SARTuple {
+	    final public State state;
+	    final public Action action;
+	    final public double reward;
 
 	    //Link constructor
 	    public SARTuple(State s, Action a, double r) {
-	    	_state = new State(s);
-	    	_action = a;
-	    	_reward = r;
+	    	state = new State(s);
+	    	action = a;
+	    	reward = r;
 	    }
 	    
 	    public SARTuple(SARTuple sar) {
-	    	_state = new State(sar._state);
-	    	_action = sar._action;
-	    	_reward = sar._reward;
+	    	state = new State(sar.state);
+	    	action = sar.action;
+	    	reward = sar.reward;
 	    }
 	    
 	}
 	
-	public Vector<SARTuple> _trajectory;
+	public Vector<SARTuple> tuples;
 	
-	public Trajectory() {};
+	public Trajectory() {
+		tuples = new Vector<SARTuple>();
+	};
 	
 	// Need to make a deep copy. Damn you Java.
 	public Trajectory(Trajectory traj) {
-		Iterator<SARTuple> iter = traj._trajectory.iterator();
+		tuples = new Vector<SARTuple>(traj.tuples.size());
+		Iterator<SARTuple> iter = traj.tuples.iterator();
 		while(iter.hasNext()) {
-			_trajectory.add(iter.next());
+			SARTuple sar = new SARTuple(iter.next());
+			tuples.add(sar);
 		}
 	}
 	
@@ -46,6 +50,16 @@ public class Trajectory {
 	
 	public boolean add(State s, Action a, double r) {
 		SARTuple sar = new SARTuple(s, a, r);
-		return _trajectory.add(sar);
+		return tuples.add(sar);
 	}
+	
+	public double sum_rewards() {
+		double sum = 0;
+		Iterator<SARTuple> iterator = tuples.iterator();
+		while(iterator.hasNext()) {
+			sum += iterator.next().reward;
+		}
+		return sum;
+	}
+	
 }

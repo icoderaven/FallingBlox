@@ -1,4 +1,6 @@
-package tetris.agent;
+package tetris.trajgen;
+
+import tetris.agent.Trajectory;
 import java.util.Vector;
 import java.util.concurrent.*;
 
@@ -19,6 +21,7 @@ public class TrajectoryGenerationPool {
 	 */
 	public TrajectoryGenerationPool(int numThreads) {
 		_pool = Executors.newFixedThreadPool(numThreads);
+		_trajectories = new Vector<Trajectory>();
 	}
 	
 	/**
@@ -42,12 +45,17 @@ public class TrajectoryGenerationPool {
 		
 		// Record the results as they are done
 		double startTime = System.currentTimeMillis();
+		double rewardSum = 0;
+		int lengthSum = 0;
 		for(int i = 0; i < numTrajectories; i++) {
 			try {
-				_trajectories.add(taskService.take().get());
-				double tick = System.currentTimeMillis();
-				System.out.format("Completed task %d/%d, Average rate %f", 
-						i, numTrajectories, 1000*(i+1)/(tick - startTime));
+				Trajectory traj = taskService.take().get();
+				rewardSum += traj.sum_rewards();
+				lengthSum += traj.tuples.size();
+				_trajectories.add(traj);
+				//double tick = System.currentTimeMillis();
+				//System.out.format("Completed task %d/%d, Average rate %f%n", 
+				//		i, numTrajectories, 1000*(i+1)/(tick - startTime));
 			} catch (InterruptedException e) {
 				// Interrupted before all tasks could finish
 				System.out.println("Task interrupted.");
@@ -59,6 +67,11 @@ public class TrajectoryGenerationPool {
 			}
 		}
 		
+		double tick = System.currentTimeMillis();
+		System.out.format("Completed all task (%d/%d) at rate %f Hz with average reward %f"
+				+ " and average length %f.%n", 
+				numTrajectories, numTrajectories, 1000*(numTrajectories)/(tick - startTime),
+				rewardSum/numTrajectories, 1.0*lengthSum/numTrajectories);
 		return new Vector<Trajectory>(_trajectories);
 		
 	}

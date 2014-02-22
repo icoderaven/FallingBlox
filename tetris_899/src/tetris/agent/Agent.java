@@ -1,7 +1,6 @@
 package tetris.agent;
-import tetris.simulator.SimState;
 import tetris.simulator.State;
-
+import tetris.trajgen.*;
 
 public class Agent {
 
@@ -20,10 +19,23 @@ public class Agent {
 	//- index n of the action to execute in legalMoves
 	public int chooseAction(State s, int[][] legalMoves) 
 	{		
-		//example random agent
+		
+		// Example code for using trajectory generation package
+		StateGenerator stateGen = new FixedStateGenerator(s);
+		Policy policy = new RandomPolicy();
+		RewardFunction rewardFunc = new LinesClearedReward();
+		//RewardFunction rewardFunc = new TurnsAliveReward();
+		TrajectoryGenerator trajGen = 
+				new FixedLengthTrajectoryGenerator(stateGen, policy, rewardFunc, 100);
+		
+		//trajGen.get_trajectory();
+
+		TrajectoryGenerationPool trajMachine = new TrajectoryGenerationPool(8);
+		trajMachine.generate_trajectories(trajGen, 1000);
+		
 		return pi.get_action(s).index; 
-		//return random action
-//		return (int)(Math.random()*legalMoves.length);
+		//return (int)(Math.random()*legalMoves.length);
+		
 	}
 	
 }

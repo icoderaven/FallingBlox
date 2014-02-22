@@ -1,5 +1,6 @@
-package tetris.agent;
+package tetris.trajgen;
 
+import tetris.agent.*;
 import java.util.concurrent.Callable;
 import tetris.simulator.State;
 
@@ -86,7 +87,7 @@ public abstract class TrajectoryGenerator implements Callable<Trajectory> {
 		} else {
 			
 		}
-		_trajectory._trajectory.clear();
+		_trajectory = new Trajectory();
 	}
 	
 	/**
