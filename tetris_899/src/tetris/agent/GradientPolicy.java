@@ -17,10 +17,12 @@ public class GradientPolicy implements Policy {
 	{
 		_feature = new BoardFeature();
 		_params = new SimpleMatrix(_feature.get_feature_dimension(),1);
-		for(int i=0;i < _params.numRows(); i++)
-		{
-			_params.set(i,Math.random());
-		}
+//		for(int i=0;i < _params.numRows(); i++)
+//		{
+//			_params.set(i,Math.random());
+//		}
+		double[][] resTemp = {{9.674 , -11.213,  -456.419,  -270.634,  -176.410,   0.983,  51.536}};
+		_params = new SimpleMatrix(resTemp).transpose();
 	}
 
 	public GradientPolicy(Feature featureGenerator, SimpleMatrix parameters) {

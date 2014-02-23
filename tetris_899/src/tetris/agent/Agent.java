@@ -1,47 +1,47 @@
 package tetris.agent;
+
 import tetris.simulator.State;
 import tetris.trajgen.*;
 
 public class Agent {
 
 	public Policy pi;
-	
-	public Agent()
-	{
+
+	public Agent() {
 		pi = new GradientPolicy();
 	}
-	//implement this function to have a working system
-	//Inputs:
-	//- s is the current state of the board
-	//- legalMoves is a nx2 matrix of the n possible actions for the current piece.
-	//	An action is the orientation & column to place the current piece
-	//Outputs:
-	//- index n of the action to execute in legalMoves
-	public int chooseAction(State s, int[][] legalMoves) 
-	{		
-		int counter = 0;
-		while(counter<10){
-		
-		// Example code for using trajectory generation package
-		StateGenerator stateGen = new FixedStateGenerator(s);
-//		Policy policy = new RandomPolicy();
-		RewardFunction rewardFunc = new LinesClearedReward();
-//		RewardFunction rewardFunc = new TurnsAliveReward();
-		TrajectoryGenerator trajGen = 
-				new FixedLengthTrajectoryGenerator(stateGen, pi, rewardFunc, 100);
-		
-		//trajGen.get_trajectory();
 
+	// implement this function to have a working system
+	// Inputs:
+	// - s is the current state of the board
+	// - legalMoves is a nx2 matrix of the n possible actions for the current
+	// piece.
+	// An action is the orientation & column to place the current piece
+	// Outputs:
+	// - index n of the action to execute in legalMoves
+	public int chooseAction(State s, int[][] legalMoves) {
+		int counter = 0;
 		TrajectoryGenerationPool trajMachine = new TrajectoryGenerationPool(8);
-		
-		pi.fit_policy(trajMachine.generate_trajectories(trajGen, 10));
-		counter+=1;
-		//return (int)(Math.random()*legalMoves.length);
+		while (counter < 10) {
+
+			// Example code for using trajectory generation package
+			StateGenerator stateGen = new FixedStateGenerator(s);
+			// Policy policy = new RandomPolicy();
+			RewardFunction rewardFunc = new LinesClearedReward();
+			// RewardFunction rewardFunc = new TurnsAliveReward();
+			TrajectoryGenerator trajGen = new FixedLengthTrajectoryGenerator(
+					stateGen, pi, rewardFunc, 100);
+
+			// trajGen.get_trajectory();
+
+			pi.fit_policy(trajMachine.generate_trajectories(trajGen, 10));
+			counter += 1;
+			// return (int)(Math.random()*legalMoves.length);
 		}
 		int move = pi.get_action(s).index;
-		
+		trajMachine.close();
 		System.out.format("Returning %d%n", move);
 		return move;
 	}
-	
+
 }
