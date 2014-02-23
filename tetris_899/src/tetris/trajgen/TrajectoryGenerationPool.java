@@ -74,4 +74,11 @@ public class TrajectoryGenerationPool {
 		
 	}
 	
+	/**
+	 * Terminate this resource.
+	 */
+	public void close() {
+		_pool.shutdown();
+	}
+	
 }
