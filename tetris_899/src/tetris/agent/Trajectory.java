@@ -62,4 +62,11 @@ public class Trajectory {
 		return sum;
 	}
 	
+	public double sum_rewards(int start_index) {
+		double sum = 0;
+		for(int i=start_index; i<tuples.size(); i++)
+			sum+=tuples.get(i).reward;
+		return sum;
+	}
+	
 }

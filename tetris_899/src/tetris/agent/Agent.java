@@ -19,24 +19,29 @@ public class Agent {
 	//- index n of the action to execute in legalMoves
 	public int chooseAction(State s, int[][] legalMoves) 
 	{		
+		int counter = 0;
+		while(counter<10){
 		
 		// Example code for using trajectory generation package
 		StateGenerator stateGen = new FixedStateGenerator(s);
 //		Policy policy = new RandomPolicy();
-//		RewardFunction rewardFunc = new LinesClearedReward();
-		RewardFunction rewardFunc = new TurnsAliveReward();
+		RewardFunction rewardFunc = new LinesClearedReward();
+//		RewardFunction rewardFunc = new TurnsAliveReward();
 		TrajectoryGenerator trajGen = 
-				new FixedLengthTrajectoryGenerator(stateGen, pi, rewardFunc, 1000);
+				new FixedLengthTrajectoryGenerator(stateGen, pi, rewardFunc, 100);
 		
 		//trajGen.get_trajectory();
 
 		TrajectoryGenerationPool trajMachine = new TrajectoryGenerationPool(8);
 		
 		pi.fit_policy(trajMachine.generate_trajectories(trajGen, 10));
-		
-		return pi.get_action(s).index; 
+		counter+=1;
 		//return (int)(Math.random()*legalMoves.length);
+		}
+		int move = pi.get_action(s).index;
 		
+		System.out.format("Returning %d%n", move);
+		return move;
 	}
 	
 }

@@ -14,7 +14,7 @@ import java.util.*;
 
 public class BoardFeature implements Feature {
 		
-	public int nFeatures = 9;
+	public int nFeatures = 6;
 	
     public SimpleMatrix get_feature_vector(State temp_s, Action a)
     {    	
@@ -82,9 +82,11 @@ public class BoardFeature implements Feature {
 		
 		// Return the features.  Can change which features are used by 
 		// changing this array assignment and nFeatures above
-		double[][] resTemp = {{maxH, minH, nHoles, nEmptyBelow, avgH, minRow, maxRow, avgRow, rGone}};
+		double rows = (double) s.ROWS;
+		double cols = (double) s.COLS;
+		double[][] resTemp = {{maxH/rows, minH/rows, nHoles/(rows*cols), nEmptyBelow/(rows*cols),  minRow/(rows), maxRow/(rows)}};
 		SimpleMatrix res = new SimpleMatrix(resTemp);
-		res.transpose();
+		res = res.transpose();
 		//res.print();
 		return res;
     }

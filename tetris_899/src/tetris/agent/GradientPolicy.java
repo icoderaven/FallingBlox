@@ -15,9 +15,12 @@ public class GradientPolicy implements Policy {
 	
 	public GradientPolicy()
 	{
-		_feature = new DefaultFeature();
+		_feature = new BoardFeature();
 		_params = new SimpleMatrix(_feature.get_feature_dimension(),1);
-		_params.set(1);
+		for(int i=0;i < _params.numRows(); i++)
+		{
+			_params.set(i,Math.random());
+		}
 	}
 
 	public GradientPolicy(Feature featureGenerator, SimpleMatrix parameters) {
@@ -41,6 +44,7 @@ public class GradientPolicy implements Policy {
 		//Move till the running total exceeds this probability value
 		for(int i=0; i<dist.numRows(); i++){
 			cdf+=dist.get(i);
+//			System.out.format("CDF: %f%n", cdf);
 			if (u <= cdf){
 				index = i;
 				break;
@@ -65,14 +69,14 @@ public class GradientPolicy implements Policy {
 			z.set(0);
 			t = t_list[i];
 			//Move through every tuple in this trajectory, maintaining running averages
-			for(int j=0; j<t.tuples.size(); j++)
+			for(int j=0; j<t.tuples.size()-1; j++)
 			{
 				//z_{t+1} = gamma*z_{t} + gradient(s,a)
 				SimpleMatrix grad = gradient(t.tuples.get(j).state, t.tuples.get(j).action);
-				grad.print();
+//				grad.print();
 				z = z.scale(gamma).plus(grad);
 				//delta_{t+1} = delta + (1/t+1)(r_{t+1}*z_{t+1} - delta)
-				delta = delta.plus(1.0/(j+1), z.scale(t.tuples.get(j).reward).minus(delta));
+				delta = delta.plus(1.0/(j+2), z.scale(t.sum_rewards(j+1)).minus(delta));
 			}
 			//Add this to the corresponding column of the big container matrix
 			deltas.insertIntoThis(0, i, delta);
@@ -88,9 +92,12 @@ public class GradientPolicy implements Policy {
 		
 		//Step params in this direction
 		//TODO Figure out how to be smarter about the step
-		double step = 1.0;
+		double step = 1 ;
 //		mean_delta.print();
-		_params.plus(step, mean_delta);
+		_params = _params.plus(step, mean_delta);
+//		_params = _params.divide(_params.normF());
+		System.out.print(mean_delta.normF());
+		_params.transpose().print();
 	}
 
 	@Override
@@ -113,7 +120,9 @@ public class GradientPolicy implements Policy {
 	}
 
 	public double function_evaluator(State s, Action a) {
-		return Math.exp(_params.transpose().dot(_feature.get_feature_vector(s, a)));
+		SimpleMatrix temp = _feature.get_feature_vector(s, a);
+		double value = _params.transpose().dot(temp);
+		return Math.exp(value);
 	}
 
 	@Override
@@ -137,6 +146,5 @@ public class GradientPolicy implements Policy {
 	public Policy copy() {
 		return new GradientPolicy(this);
 	}
-
 
 }
