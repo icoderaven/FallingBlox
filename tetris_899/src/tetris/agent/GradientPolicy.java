@@ -21,8 +21,8 @@ public class GradientPolicy implements Policy {
 //		{
 //			_params.set(i,Math.random());
 //		}
-		double[][] resTemp = {{9.674 , -11.213,  -456.419,  -270.634,  -176.410,   0.983,  51.536}};
-		_params = new SimpleMatrix(resTemp).transpose();
+		//double[][] resTemp = {{9.674 , -11.213,  -456.419,  -270.634,  -176.410,   0.983,  51.536}};
+		//_params = new SimpleMatrix(resTemp).transpose();
 	}
 
 	public GradientPolicy(Feature featureGenerator, SimpleMatrix parameters) {
