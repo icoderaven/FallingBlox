@@ -12,17 +12,22 @@ public class GradientPolicy implements Policy {
 
 	public Feature _feature;
 	private SimpleMatrix _params;
+	public SimpleMatrix _normalizedParams; // TODO HACK
 	
 	public GradientPolicy()
 	{
 		_feature = new BoardFeature();
+		//_feature = new DefaultFeature();
 		_params = new SimpleMatrix(_feature.get_feature_dimension(),1);
+		_normalizedParams = new SimpleMatrix(_params);
+		
 //		for(int i=0;i < _params.numRows(); i++)
 //		{
 //			_params.set(i,Math.random());
 //		}
-		//double[][] resTemp = {{9.674 , -11.213,  -456.419,  -270.634,  -176.410,   0.983,  51.536}};
-		//_params = new SimpleMatrix(resTemp).transpose();
+	
+		_params.set(_params.numRows() - 5, -20);
+		normalize_params();
 	}
 
 	public GradientPolicy(Feature featureGenerator, SimpleMatrix parameters) {
@@ -32,7 +37,12 @@ public class GradientPolicy implements Policy {
 	
 	public GradientPolicy(GradientPolicy other) {
 		_feature = other._feature.copy();
-		_params = other._params;
+		_params = new SimpleMatrix(other._params);
+		_normalizedParams = new SimpleMatrix(other._normalizedParams);
+	}
+	
+	public SimpleMatrix get_params() {
+		return new SimpleMatrix(_params);
 	}
 	
 	@Override
@@ -75,10 +85,10 @@ public class GradientPolicy implements Policy {
 			{
 				//z_{t+1} = gamma*z_{t} + gradient(s,a)
 				SimpleMatrix grad = gradient(t.tuples.get(j).state, t.tuples.get(j).action);
-//				grad.print();
+				//grad.transpose().print();
 				z = z.scale(gamma).plus(grad);
 				//delta_{t+1} = delta + (1/t+1)(r_{t+1}*z_{t+1} - delta)
-				delta = delta.plus(1.0/(j+2), z.scale(t.sum_rewards(j+1)).minus(delta));
+				delta = delta.plus(1.0/(j+2), z.scale(t.sum_rewards(j)).minus(delta));
 			}
 			//Add this to the corresponding column of the big container matrix
 			deltas.insertIntoThis(0, i, delta);
@@ -94,12 +104,14 @@ public class GradientPolicy implements Policy {
 		
 		//Step params in this direction
 		//TODO Figure out how to be smarter about the step
-		double step = 1 ;
-//		mean_delta.print();
+		double step = 0.1;
+		
+//		System.out.println("Mean delta:");
+//		mean_delta.transpose().print();
 		_params = _params.plus(step, mean_delta);
-//		_params = _params.divide(_params.normF());
-		System.out.print(mean_delta.normF());
-		_params.transpose().print();
+		normalize_params();
+		System.out.format("Step size: %f%n", mean_delta.normF());
+//		_params.transpose().print();
 	}
 
 	@Override
@@ -118,12 +130,20 @@ public class GradientPolicy implements Policy {
 		for (int a_prime = 0; a_prime < probs.numRows(); a_prime++) {
 			probs.set(a_prime, function_evaluator(s, new Action(a_prime)) );
 		}
-		return probs.divide(probs.elementSum());
+		
+		double z = probs.elementSum();
+		
+		// Catch instances where exponent underflows and returns all 0
+		if(z == 0) {
+			probs.set(1.0);
+			z = probs.numRows();
+		}
+		return probs.divide(z);
 	}
 
 	public double function_evaluator(State s, Action a) {
 		SimpleMatrix temp = _feature.get_feature_vector(s, a);
-		double value = _params.transpose().dot(temp);
+		double value = _normalizedParams.dot(temp);
 		return Math.exp(value);
 	}
 
@@ -144,6 +164,26 @@ public class GradientPolicy implements Policy {
 		return J_for_a.minus(E_for_s);
 	}
 
+	protected void normalize_params() {
+		
+		double maxVal = Double.NEGATIVE_INFINITY;
+		
+//		System.out.println("Params:");
+//		_params.transpose().print();
+		for(int i = 0; i < _params.numRows(); i++) {
+			double val = _params.get(i);
+			if(val > maxVal) {
+				maxVal = val;
+			}
+		}
+//		System.out.format("Max val: %f%n", maxVal);
+		for(int i = 0; i < _normalizedParams.numRows(); i++) {
+			_normalizedParams.set(i, _params.get(i) - maxVal + 1.0);
+		}
+//		System.out.println("Normalized Params:");
+//		_normalizedParams.transpose().print();
+	}
+	
 	@Override
 	public Policy copy() {
 		return new GradientPolicy(this);

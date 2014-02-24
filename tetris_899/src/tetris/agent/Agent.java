@@ -1,11 +1,13 @@
 package tetris.agent;
 
+import org.ejml.simple.SimpleMatrix;
+
 import tetris.simulator.State;
 import tetris.trajgen.*;
 
 public class Agent {
 
-	public Policy pi;
+	public GradientPolicy pi;
 
 	public Agent() {
 		pi = new GradientPolicy();
@@ -27,20 +29,37 @@ public class Agent {
 			// Example code for using trajectory generation package
 			StateGenerator stateGen = new FixedStateGenerator(s);
 			// Policy policy = new RandomPolicy();
-			RewardFunction rewardFunc = new LinesClearedReward();
-			// RewardFunction rewardFunc = new TurnsAliveReward();
+			RewardFunction func1 = new LinesClearedReward(10.0);
+			RewardFunction func2 = new TurnsAliveReward(1.0);
+			RewardFunction rewardFunc = new CompositeReward(func1, func2);
 			TrajectoryGenerator trajGen = new FixedLengthTrajectoryGenerator(
 					stateGen, pi, rewardFunc, 100);
 
-			// trajGen.get_trajectory();
-
-			pi.fit_policy(trajMachine.generate_trajectories(trajGen, 10));
+			pi.fit_policy(trajMachine.generate_trajectories(trajGen, 30));
 			counter += 1;
 			// return (int)(Math.random()*legalMoves.length);
 		}
-		int move = pi.get_action(s).index;
+		Action a = pi.get_action(s);
+		int move = a.index;
 		trajMachine.close();
+		
+		SimpleMatrix pdf = pi.pi(s);
+		System.out.println("PDF:");
+		pdf.transpose().print();
+		
 		System.out.format("Returning %d%n", move);
+		
+		State copyState = new State(s);
+		BoardFeature feature = new BoardFeature();
+		SimpleMatrix features = feature.get_feature_vector(copyState, a);
+		System.out.format("Holes: %f%n", features.get(features.numRows() - 5));
+		
+		SimpleMatrix params = pi.get_params();
+		System.out.format("Hole weight %f%n", params.get(features.numRows() - 5));
+		System.out.println("Parameters:");
+		params.transpose().print();
+		pi._normalizedParams.transpose().print();
+
 		return move;
 	}
 

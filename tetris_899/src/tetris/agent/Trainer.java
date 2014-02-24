@@ -8,6 +8,7 @@ import org.ejml.simple.SimpleMatrix;
 import tetris.simulator.State;
 import tetris.trajgen.FixedLengthTrajectoryGenerator;
 import tetris.trajgen.FixedStateGenerator;
+import tetris.trajgen.PolicyStateGenerator;
 import tetris.trajgen.StateGenerator;
 import tetris.trajgen.TrajectoryGenerationPool;
 import tetris.trajgen.TrajectoryGenerator;
@@ -20,17 +21,22 @@ public class Trainer {
 		int updateBatchSize = 10;
 		int updateIterationCounter = 0;
 		int maxTrajectoryLength = 1000;
+		int trainerSteps = 4;
 		
 		GradientPolicy pi = new GradientPolicy();
+		RandomPolicy trainerPi = new RandomPolicy();
 
 		State startState = new State();
 		
 		TrajectoryGenerationPool trajMachine = new TrajectoryGenerationPool(8);
-		StateGenerator stateGen = new FixedStateGenerator(startState);
-		// Policy policy = new RandomPolicy();
-		RewardFunction func1 = new LinesClearedReward(2.0);
+		
+		//StateGenerator stateGen = new FixedStateGenerator(startState);
+		StateGenerator stateGen = new PolicyStateGenerator(trainerPi, startState, trainerSteps);
+		
+		RewardFunction func1 = new LinesClearedReward(10.0);
 		RewardFunction func2 = new TurnsAliveReward(1.0);
 		RewardFunction rewardFunc = new CompositeReward(func1, func2);
+		
 		TrajectoryGenerator trajGen = new FixedLengthTrajectoryGenerator(
 				stateGen, pi, rewardFunc, maxTrajectoryLength);
 		
@@ -43,7 +49,7 @@ public class Trainer {
 				for(int i = 0; i < updateBatchSize; i++) {
 					pi.fit_policy(trajMachine.generate_trajectories(trajGen, trajectoryBatchSize));
 				}
-				SimpleMatrix parameters = pi.GetParams();
+				SimpleMatrix parameters = pi.get_params();
 				
 				String paramString = parameters.transpose().toString();
 				
