@@ -26,4 +26,5 @@ public class SimState extends State {
 	{
 		return N_PIECES;
 	}
+
 }
