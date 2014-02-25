@@ -12,22 +12,25 @@ public class GradientPolicy implements Policy {
 
 	public Feature _feature;
 	private SimpleMatrix _params;
-	public SimpleMatrix _normalizedParams; // TODO HACK
 	
 	public GradientPolicy()
 	{
 		_feature = new BoardFeature();
 		//_feature = new DefaultFeature();
 		_params = new SimpleMatrix(_feature.get_feature_dimension(),1);
-		_normalizedParams = new SimpleMatrix(_params);
+		_params = new SimpleMatrix(_params);
 		
 //		for(int i=0;i < _params.numRows(); i++)
 //		{
 //			_params.set(i,Math.random());
 //		}
 	
-		_params.set(_params.numRows() - 5, -20);
-		normalize_params();
+		_params.set(_params.numRows() - 6, -200); // Hole weight
+		_params.set(_params.numRows() - 8, -20); // Max height weight
+		_params.set(_params.numRows() - 5, -200); // Empty below top weight
+		_params.set(_params.numRows() - 4, -200); // Avg height weight
+		_params.set(_params.numRows() - 1, 200); // Eroded rows weight
+//		normalize_params();
 	}
 
 	public GradientPolicy(Feature featureGenerator, SimpleMatrix parameters) {
@@ -38,7 +41,7 @@ public class GradientPolicy implements Policy {
 	public GradientPolicy(GradientPolicy other) {
 		_feature = other._feature.copy();
 		_params = new SimpleMatrix(other._params);
-		_normalizedParams = new SimpleMatrix(other._normalizedParams);
+		_params = new SimpleMatrix(other._params);
 	}
 	
 	public SimpleMatrix get_params() {
@@ -81,14 +84,30 @@ public class GradientPolicy implements Policy {
 			z.set(0);
 			t = t_list[i];
 			//Move through every tuple in this trajectory, maintaining running averages
+			double averageReward = t.sum_rewards(0, 1.0)/t.tuples.size();
 			for(int j=0; j<t.tuples.size()-1; j++)
 			{
 				//z_{t+1} = gamma*z_{t} + gradient(s,a)
 				SimpleMatrix grad = gradient(t.tuples.get(j).state, t.tuples.get(j).action);
-				//grad.transpose().print();
-				z = z.scale(gamma).plus(grad);
+				
+				// Summation code
+				delta = delta.plus( grad.scale( averageReward ));
+				
+				// Online update code
+//				z = z.scale(gamma).plus(grad);
 				//delta_{t+1} = delta + (1/t+1)(r_{t+1}*z_{t+1} - delta)
-				delta = delta.plus(1.0/(j+2), z.scale(t.sum_rewards(j)).minus(delta));
+//				delta = delta.plus(1.0/(j+2), z.scale(t.sum_rewards(j+1, 1.0)).minus(delta));
+//				System.out.println("Delta running average:");
+//				delta.transpose().print();
+				
+//				SimpleMatrix rz = z.scale(t.tuples.get(j+1).reward/(j+1));
+//				double deltaRatio = ((double) j)/(j+1);
+//				SimpleMatrix deltn = delta.scale(deltaRatio);
+//				
+//				delta = deltn.plus(rz);
+//				System.out.println("Delta direct calculation:");
+//				delta.transpose().print();
+				
 			}
 			//Add this to the corresponding column of the big container matrix
 			deltas.insertIntoThis(0, i, delta);
@@ -104,12 +123,12 @@ public class GradientPolicy implements Policy {
 		
 		//Step params in this direction
 		//TODO Figure out how to be smarter about the step
-		double step = 0.1;
+		double step = 1.0;
 		
 //		System.out.println("Mean delta:");
 //		mean_delta.transpose().print();
 		_params = _params.plus(step, mean_delta);
-		normalize_params();
+//		normalize_params();
 		System.out.format("Step size: %f%n", mean_delta.normF());
 //		_params.transpose().print();
 	}
@@ -122,16 +141,29 @@ public class GradientPolicy implements Policy {
 	
 	@Override
 	public SimpleMatrix pi(State s) {
+		
 		/// For current piece get all possible actions
 		int[][] moves = s.legalMoves();
+		SimpleMatrix exponents = new SimpleMatrix(moves.length, 1);
 		SimpleMatrix probs = new SimpleMatrix(moves.length, 1);
-		// Evaluate function for all actions
-		
-		for (int a_prime = 0; a_prime < probs.numRows(); a_prime++) {
-			probs.set(a_prime, function_evaluator(s, new Action(a_prime)) );
+
+		// Get all exponents first
+		double maxVal = Double.NEGATIVE_INFINITY;
+		for (int a_prime = 0; a_prime < moves.length; a_prime++) {
+			double logLikelihood = calculate_log_likelihood(s, new Action(a_prime));
+			if(logLikelihood > maxVal) {
+				maxVal = logLikelihood;
+			}
+			exponents.set(a_prime, logLikelihood);
 		}
 		
-		double z = probs.elementSum();
+		double z = 0;
+		for (int a_prime = 0; a_prime < moves.length; a_prime++) {
+			double normalizedExponent = exponents.get(a_prime) - maxVal + 5.0;
+			double likelihood = Math.exp(normalizedExponent);
+			z += likelihood;
+			probs.set(a_prime, likelihood);
+		}
 		
 		// Catch instances where exponent underflows and returns all 0
 		if(z == 0) {
@@ -141,10 +173,13 @@ public class GradientPolicy implements Policy {
 		return probs.divide(z);
 	}
 
+	protected double calculate_log_likelihood(State s, Action a) {
+		SimpleMatrix temp = _feature.get_feature_vector(s,a);
+		return _params.dot(temp);
+	}
+	
 	public double function_evaluator(State s, Action a) {
-		SimpleMatrix temp = _feature.get_feature_vector(s, a);
-		double value = _normalizedParams.dot(temp);
-		return Math.exp(value);
+		return Math.exp(calculate_log_likelihood(s, a));
 	}
 
 	@Override
@@ -164,25 +199,25 @@ public class GradientPolicy implements Policy {
 		return J_for_a.minus(E_for_s);
 	}
 
-	protected void normalize_params() {
-		
-		double maxVal = Double.NEGATIVE_INFINITY;
-		
-//		System.out.println("Params:");
-//		_params.transpose().print();
-		for(int i = 0; i < _params.numRows(); i++) {
-			double val = _params.get(i);
-			if(val > maxVal) {
-				maxVal = val;
-			}
-		}
-//		System.out.format("Max val: %f%n", maxVal);
-		for(int i = 0; i < _normalizedParams.numRows(); i++) {
-			_normalizedParams.set(i, _params.get(i) - maxVal + 1.0);
-		}
-//		System.out.println("Normalized Params:");
-//		_normalizedParams.transpose().print();
-	}
+//	protected void normalize_params() {
+//		
+//		double maxVal = Double.NEGATIVE_INFINITY;
+//		
+////		System.out.println("Params:");
+////		_params.transpose().print();
+//		for(int i = 0; i < _params.numRows(); i++) {
+//			double val = _params.get(i);
+//			if(val > maxVal) {
+//				maxVal = val;
+//			}
+//		}
+////		System.out.format("Max val: %f%n", maxVal);
+//		for(int i = 0; i < _normalizedParams.numRows(); i++) {
+//			_normalizedParams.set(i, _params.get(i) - maxVal + 1.0);
+//		}
+////		System.out.println("Normalized Params:");
+////		_normalizedParams.transpose().print();
+//	}
 	
 	@Override
 	public Policy copy() {

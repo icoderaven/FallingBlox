@@ -24,17 +24,17 @@ public class Agent {
 	public int chooseAction(State s, int[][] legalMoves) {
 		int counter = 0;
 		TrajectoryGenerationPool trajMachine = new TrajectoryGenerationPool(8);
-		while (counter < 10) {
+		// Example code for using trajectory generation package
+		StateGenerator stateGen = new FixedStateGenerator(s);
+		// Policy policy = new RandomPolicy();
+		RewardFunction func1 = new LinesClearedReward(1.0);
+		RewardFunction func2 = new TurnsAliveReward(0.1);
+		RewardFunction rewardFunc = new CompositeReward(func1, func2);
+		TrajectoryGenerator trajGen = new FixedLengthTrajectoryGenerator(
+				stateGen, pi, rewardFunc, 1000);
 
-			// Example code for using trajectory generation package
-			StateGenerator stateGen = new FixedStateGenerator(s);
-			// Policy policy = new RandomPolicy();
-			RewardFunction func1 = new LinesClearedReward(10.0);
-			RewardFunction func2 = new TurnsAliveReward(1.0);
-			RewardFunction rewardFunc = new CompositeReward(func1, func2);
-			TrajectoryGenerator trajGen = new FixedLengthTrajectoryGenerator(
-					stateGen, pi, rewardFunc, 100);
-
+		
+		while (counter < 1) {
 			pi.fit_policy(trajMachine.generate_trajectories(trajGen, 30));
 			counter += 1;
 			// return (int)(Math.random()*legalMoves.length);
@@ -49,16 +49,18 @@ public class Agent {
 		
 		System.out.format("Returning %d%n", move);
 		
+		double reward = rewardFunc.get_reward(s, a);
+		System.out.format("Reward: %f%n", reward);
+		
 		State copyState = new State(s);
 		BoardFeature feature = new BoardFeature();
 		SimpleMatrix features = feature.get_feature_vector(copyState, a);
-		System.out.format("Holes: %f%n", features.get(features.numRows() - 5));
+//		System.out.format("Holes: %f%n", features.get(features.numRows() - 5));
 		
 		SimpleMatrix params = pi.get_params();
-		System.out.format("Hole weight %f%n", params.get(features.numRows() - 5));
-		System.out.println("Parameters:");
+//		System.out.format("Hole weight %f%n", params.get(features.numRows() - 5));
+//		System.out.println("Parameters:");
 		params.transpose().print();
-		pi._normalizedParams.transpose().print();
 
 		return move;
 	}

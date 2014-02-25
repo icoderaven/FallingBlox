@@ -29,6 +29,7 @@ public abstract class TrajectoryGenerator implements Callable<Trajectory> {
 	// Work variables for recording trajectories and such
 	protected Trajectory _trajectory;
 	protected State _currentState;
+	protected double lastReward;
 	
 	/**
 	 * Construct a TrajectoryGenerator from a StateGenerator, Policy, and RewardFunction. This
@@ -87,6 +88,7 @@ public abstract class TrajectoryGenerator implements Callable<Trajectory> {
 		} else {
 			
 		}
+		lastReward = 0;
 		_trajectory = new Trajectory();
 	}
 	
@@ -98,7 +100,10 @@ public abstract class TrajectoryGenerator implements Callable<Trajectory> {
 		// Record history and take a step
 		Action action = _policy.get_action(_currentState);
 		double reward = _rewardFunc.get_reward(_currentState, action);
-		_trajectory.add(_currentState, action, reward);
+		_trajectory.add(_currentState, action, lastReward);
+		
+		// This accounts for odd lag in our reward functions
+		lastReward = reward;
 		
 		action.apply(_currentState); // This modifies _currentState!
 	}

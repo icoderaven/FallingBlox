@@ -32,7 +32,7 @@ public class LinesClearedReward extends RewardFunction {
 		int prevCleared = copyState.getRowsCleared();
 		action.apply(copyState);
 		int nextCleared = copyState.getRowsCleared();
-		return _weight*(nextCleared - prevCleared);
+		return (nextCleared - prevCleared);
 	}
 
 	public RewardFunction copy() {

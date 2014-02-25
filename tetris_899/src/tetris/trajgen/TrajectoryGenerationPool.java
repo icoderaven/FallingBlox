@@ -48,7 +48,7 @@ public class TrajectoryGenerationPool {
 		for(int i = 0; i < numTrajectories; i++) {
 			try {
 				Trajectory traj = taskService.take().get();
-				rewardSum += traj.sum_rewards();
+				rewardSum += traj.sum_rewards(0, 1.0);
 				lengthSum += traj.tuples.size();
 				trajectories[i] = traj;
 				//double tick = System.currentTimeMillis();

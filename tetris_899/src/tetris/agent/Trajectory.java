@@ -53,19 +53,13 @@ public class Trajectory {
 		return tuples.add(sar);
 	}
 	
-	public double sum_rewards() {
-		double sum = 0;
-		Iterator<SARTuple> iterator = tuples.iterator();
-		while(iterator.hasNext()) {
-			sum += iterator.next().reward;
+	public double sum_rewards(int start_index, double gamma) {
+		double sum = 0, discount = 1.0;
+		
+		for(int i=start_index; i<tuples.size(); i++) {
+			sum += discount*tuples.get(i).reward;
+			discount = discount * gamma;
 		}
-		return sum;
-	}
-	
-	public double sum_rewards(int start_index) {
-		double sum = 0;
-		for(int i=start_index; i<tuples.size(); i++)
-			sum+=tuples.get(i).reward;
 		return sum;
 	}
 	

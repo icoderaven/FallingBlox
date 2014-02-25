@@ -14,7 +14,7 @@ import java.util.*;
 
 public class BoardFeature implements Feature {
 		
-	public int nFeatures = 7 + 2*State.COLS + State.ROWS;
+	public int nFeatures = 8; // + 2*State.COLS + State.ROWS;
 	
     public SimpleMatrix get_feature_vector(State temp_s, Action a)
     {    
@@ -30,8 +30,11 @@ public class BoardFeature implements Feature {
     	
     	// Look at the board after taking the action
 		State s = new State(temp_s);
+		int numRowsCleared = s.getRowsCleared();
+		
 		s.makeMove(a.index);
-    	
+    	int erodedRows = s.getRowsCleared() - numRowsCleared;
+		
     	// Extract the board and set all nonzero values to 1
 		SimpleMatrix board = new SimpleMatrix(State.ROWS, State.COLS) ;
 		int[][] field = s.getField();
@@ -70,8 +73,8 @@ public class BoardFeature implements Feature {
 			nEmptyBelow += maxH - nFullCol;
 			totalHeight += h;
 			
-			resTemp[0][i] = h/rows;
-			resTemp[0][State.COLS + i] = (h - nFullCol)/rows;
+			//resTemp[0][i] = h/rows;
+			//resTemp[0][State.COLS + i] = (h - nFullCol)/rows;
 		}
 		
 		double avgH = totalHeight / s.COLS;
@@ -85,7 +88,7 @@ public class BoardFeature implements Feature {
 			rowFill[i] = nFullRow;
 			totalRowFill += nFullRow;
 			
-			resTemp[0][2*State.COLS + i] = nFullRow/cols;
+			//resTemp[0][2*State.COLS + i] = nFullRow/cols;
 		}
 		Arrays.sort(rowFill);
 		double minRow = rowFill[0];
@@ -100,9 +103,10 @@ public class BoardFeature implements Feature {
 		
 		// Return the features.  Can change which features are used by 
 		// changing assignments to resTemp and nFeatures above
-		int curInd = 2*State.COLS + State.ROWS;
-		double[] indivFeatures =  {maxH/rows, minH/rows, nHoles/(rows*cols), 
-			nEmptyBelow/(rows*cols),  avgH/rows, minRow/cols, maxRow/cols};
+		//int curInd = 2*State.COLS + State.ROWS;
+		int curInd = 0;
+		double[] indivFeatures =  {maxH, minH, nHoles, 
+			nEmptyBelow,  avgH, minRow, maxRow, erodedRows};
 		System.arraycopy(indivFeatures, 0, resTemp[0], curInd, indivFeatures.length);
 		SimpleMatrix res = new SimpleMatrix(resTemp);
 		res = res.transpose();
