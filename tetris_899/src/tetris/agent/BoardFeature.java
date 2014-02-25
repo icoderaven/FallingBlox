@@ -26,7 +26,7 @@ public class BoardFeature implements Feature {
 		// filled spaces in each row, height of tallest col, height of shortest col,
 		// total number of holes, number of empty spaces below the highest point 
 		// on the board, avg height of columns, number of filled spaces in emptiest 
-		// row, number filled in fullest row
+		// row, number filled in fullest row, avg of rows
     	
     	// Look at the board after taking the action
 		State s = new State(temp_s);
