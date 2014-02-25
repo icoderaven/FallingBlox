@@ -14,7 +14,7 @@ import java.util.*;
 
 public class BoardFeature implements Feature {
 		
-	public int nFeatures = 12; // + 2*State.COLS + State.ROWS;
+	public int nFeatures = 8; // + 2*State.COLS + State.ROWS;
 	
     public SimpleMatrix get_feature_vector(State temp_s, Action a)
     {    
@@ -94,7 +94,7 @@ public class BoardFeature implements Feature {
 		double minRow = rowFill[0];
 		double maxRow = rowFill[rowFill.length - 1];
 		double avgRow = totalRowFill / s.ROWS;
-		double avgRowFilled = totalRowFill / maxH;
+		//double avgRowFilled = totalRowFill / maxH;  // could divide by zero
 		
 		// Rows removed
 		//int rGone = s.getRowsCleared();
@@ -114,8 +114,7 @@ public class BoardFeature implements Feature {
 		//int curInd = 2*State.COLS + State.ROWS;
 		int curInd = 0;
 		double[] indivFeatures =  {maxH, minH, nHoles, 
-			nEmptyBelow, avgH, minRow, maxRow, erodedRows,
-			avgRow, topRows, nHighestRow, avgRowFilled};
+			nEmptyBelow, avgH, minRow, maxRow, erodedRows};
 		System.arraycopy(indivFeatures, 0, resTemp[0], curInd, indivFeatures.length);
 		SimpleMatrix res = new SimpleMatrix(resTemp);
 		res = res.transpose();
