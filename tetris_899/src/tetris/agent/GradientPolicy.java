@@ -25,12 +25,12 @@ public class GradientPolicy implements Policy {
 //			_params.set(i,Math.random());
 //		}
 	
-//		_params.set(_params.numRows() - 6, -200); // Hole weight
-//		_params.set(_params.numRows() - 8, -20); // Max height weight
-//		_params.set(_params.numRows() - 5, -200); // Empty below top weight
-//		_params.set(_params.numRows() - 4, -200); // Avg height weight
-//		_params.set(_params.numRows() - 1, 200); // Eroded rows weight
 		double[][] initParams = {{-40, -1, -80, -40, -40, 0, -1, 50}};
+		for(int i = 0; i < initParams[0].length; i++) {
+			_params.set(_params.numRows() - initParams[0].length + 1, 
+					initParams[0][i]);
+		}
+		
 		_params = new SimpleMatrix(initParams);
 		_params = _params.transpose();
 //		normalize_params();
