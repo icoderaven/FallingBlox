@@ -21,13 +21,39 @@
 \maketitle
 
 \section{Algorithm}
+We approach the task of solving the problem using the general Policy Gradient Theorem inspired by the REINFORCE algorithm. Unlike the former, however, we incorporate causality by only calculating rewards that are obtained after the current timestep, since the actions that are chosen at a particular timestep cannot influence the rewards in the past. The algorithm is as follows
+
+\begin{algorithm}
+\caption{Modified REINFORCE}
+\label{reinforce_alg}
+\begin{algorithmic}
+\FOR {$i = 1\dots n_{\text{fitting iterations}}$}
+\STATE Run simulator with $\pi_{\theta}$ to collect $\xi^{1...N}$\\
+\FOR {$j = 1 \dots N$}
+\STATE {$z_1 \gets \vec{0}, ~ \Delta_1 \gets \vec{0}$}\\
+\FOR {$t = 1 \dots T-1$}
+%\STATE  $\nabla_{\theta}J \gets \frac{1}{N}\underset{i=1}{\overset{N}{\sum}}\left[\sum\limits_{t=0}^{T-1}\nabla_{\theta}\log\pi\left(a_{t}^{i}|s_{t}^{i}\right) \sum\limits_{t}^{T-1} r_t\right]$\\
+%\STATE $\theta_{new} \gets \theta_{old}+\alpha\nabla_{\theta}J$
+\STATE $z_{t+1} \gets \gamma z_t + \nabla_{\theta}\log\pi\left(a_{t}^{i}|s_{t}^{i} \right)$
+\STATE $\Delta_{t+1} \gets \Delta_t + \frac{1}{t+1} \left( z_{t+1}\sum\limits_{t+1}^{T-1} r_t - \Delta_t\right)$
+\ENDFOR
+\STATE $\delta(j) \gets \theta_{old}+\alpha \Delta_T$
+\ENDFOR
+\STATE $\theta_{new} \gets  avg(\delta)$
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
 
 
 \section{Features}
 
 
 \section{Implementation Details}
+For the simulation we use the Java based simulator provided in the assignment. The system architecture consists of generic interfaces that are implemented as class variants for various purposes for modularity. For generating trajectories we generate random trajectories by concurrently forward simulating using multiple threads for efficiency.
 
+The policy distribution function is designed to be a Boltzmann distribution that operates on a linear function of features, i.e.,
+\[ \pi(a|s)=\frac{\exp\left(\theta^{T}f\left(s_{a}^{\prime}\right)\right)}{\underset{a^{\prime}}{\sum}\exp\left(\theta^{T}f\left(s_{a^{\prime}}^{\prime}\right)\right)} \]
+ The policy gradient parameters are initialized with uniform random weights, and the starting policy for generating trajectories is a random policy.
 
 \section{Results}
 
