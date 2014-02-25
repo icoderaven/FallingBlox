@@ -15,20 +15,20 @@ public class GradientPolicy implements Policy {
 	
 	public GradientPolicy()
 	{
-		_feature = new BoardFeature();
+		_feature = new TopFourFeatures();
 		//_feature = new DefaultFeature();
 		_params = new SimpleMatrix(_feature.get_feature_dimension(),1);
 		
-//		for(int i=0;i < _params.numRows(); i++)
-//		{
-//			_params.set(i,Math.random());
-//		}
-	
-		double[][] initParams = {{-40, -1, -80, -40, -40, 0, -1, 50}};
-		for(int i = 0; i < initParams[0].length; i++) {
-			_params.set(_params.numRows() - initParams[0].length + i, 
-					initParams[0][i]);
+		for(int i=0;i < _params.numRows(); i++)
+		{
+			_params.set(i,Math.random());
 		}
+//	
+//		double[][] initParams = {{-40, -1, -80, -40, -40, 0, -1, 50}};
+//		for(int i = 0; i < initParams[0].length; i++) {
+//			_params.set(_params.numRows() - initParams[0].length + i, 
+//					initParams[0][i]);
+//		}
 		
 //		normalize_params();
 	}

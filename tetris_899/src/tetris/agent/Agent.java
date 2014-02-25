@@ -11,6 +11,16 @@ public class Agent {
 
 	public Agent() {
 		pi = new GradientPolicy();
+		// File to store to
+				String logname = "params.txt";
+		try {
+			SimpleMatrix paramMatrix = SimpleMatrix.loadCSV(logname);
+			Feature feat = new TopFourFeatures();
+			pi = new GradientPolicy(feat, paramMatrix);
+			System.out.println("Param log loaded.");
+		 } catch(Exception e) {
+			 System.out.println("No param log found. Creating new policy.");
+		 }
 	}
 
 	// implement this function to have a working system
@@ -22,7 +32,7 @@ public class Agent {
 	// Outputs:
 	// - index n of the action to execute in legalMoves
 	public int chooseAction(State s, int[][] legalMoves) {
-		int counter = 0;
+		int counter = 1;
 		TrajectoryGenerationPool trajMachine = new TrajectoryGenerationPool(8);
 		// Example code for using trajectory generation package
 		StateGenerator stateGen = new FixedStateGenerator(s);
@@ -52,7 +62,7 @@ public class Agent {
 		System.out.format("Reward: %f%n", reward);
 		
 		State copyState = new State(s);
-		BoardFeature feature = new BoardFeature();
+		TopFourFeatures feature = new TopFourFeatures();
 		SimpleMatrix features = feature.get_feature_vector(copyState, a);
 //		System.out.format("Holes: %f%n", features.get(features.numRows() - 5));
 		

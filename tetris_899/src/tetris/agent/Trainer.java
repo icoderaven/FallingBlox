@@ -17,11 +17,11 @@ public class Trainer {
 
 	public static void main(String[] args) {
 		
-		int trajectoryBatchSize = 32;
+		int trajectoryBatchSize = 100;
 		int updateBatchSize = 1;
 		int updateIterationCounter = 0;
 		int maxTrajectoryLength = 1000;
-		int trainerSteps = 4;
+		int trainerSteps = 10;
 		
 		
 		// File to store to
@@ -30,7 +30,7 @@ public class Trainer {
 		GradientPolicy pi;
 		 try {
 			SimpleMatrix paramMatrix = SimpleMatrix.loadCSV(logname);
-			Feature feat = new BoardFeature();
+			Feature feat = new TopFourFeatures();
 			pi = new GradientPolicy(feat, paramMatrix);
 			System.out.println("Param log loaded.");
 		 } catch(Exception e) {
@@ -51,7 +51,7 @@ public class Trainer {
 		StateGenerator stateGen = new PolicyStateGenerator(trainerPi, startState, trainerSteps);
 		
 		RewardFunction func1 = new LinesClearedReward(1.0);
-		RewardFunction func2 = new TurnsAliveReward(0.0);
+		RewardFunction func2 = new TurnsAliveReward(0.1);
 		RewardFunction rewardFunc = new CompositeReward(func1, func2);
 		
 		TrajectoryGenerator trajGen = new FixedLengthTrajectoryGenerator(
@@ -66,7 +66,9 @@ public class Trainer {
 				
 				parameters.transpose().print();
 				parameters.saveToFileCSV(logname);
-			
+				stateGen = new PolicyStateGenerator(pi, startState, (int) (trainerSteps*Math.random()));
+				trajGen = new FixedLengthTrajectoryGenerator(
+						stateGen, pi, rewardFunc, maxTrajectoryLength);
 				System.out.format("Ran %d iterations so far.%n", updateIterationCounter);
 				updateIterationCounter++;
 			}
