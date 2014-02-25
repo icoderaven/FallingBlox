@@ -7,6 +7,7 @@ public class Main {
 
 	public static void main(String[] args) {
 		State sFinal = runGraphics();
+		//State sFinal = recordVideo();
 		System.out.println("You have completed "+sFinal.getRowsCleared()+" rows.");
 	}
 	
@@ -22,7 +23,7 @@ public class Main {
 			s.makeMove(a.chooseAction(s,s.legalMoves()));
 			v.draw();
 			v.drawNext(0,0);
-			v.save(s.getTurnNumber() + ".png");
+			v.save(String.format("%05d", s.getTurnNumber()) + ".png");
 			try {
 				Thread.sleep(delay);
 			} catch (InterruptedException e) {

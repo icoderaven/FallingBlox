@@ -14,7 +14,7 @@ import java.util.*;
 
 public class BoardFeature implements Feature {
 		
-	public int nFeatures = 9; // + 2*State.COLS + State.ROWS;
+	public int nFeatures = 8; // + 2*State.COLS + State.ROWS;
 	
     public SimpleMatrix get_feature_vector(State temp_s, Action a)
     {    
@@ -79,7 +79,7 @@ public class BoardFeature implements Feature {
 		
 		double avgH = totalHeight / s.COLS;
 
-		// Size of most-filled row, least, average (want to take average below maxH?)
+		// Size of most-filled row, least, average, average below maxH
 		double[] rowFill = new double[s.ROWS];
 		double totalRowFill = 0.0;
 		for(int i=0; i < s.ROWS; i++) {
@@ -94,19 +94,27 @@ public class BoardFeature implements Feature {
 		double minRow = rowFill[0];
 		double maxRow = rowFill[rowFill.length - 1];
 		double avgRow = totalRowFill / s.ROWS;
+		//double avgRowFilled = totalRowFill / maxH;  // could divide by zero
 		
 		// Rows removed
 		//int rGone = s.getRowsCleared();
 		
-		// Number of filled spaces in top row?
+		// Number of filled spaces in top row
+		SimpleMatrix highestRow = board.extractVector(true, (int)maxH);
+		double nHighestRow = highestRow.elementSum();
+		
 		// Number of overhangs? (filled spot over empty spot)
+		
+		// Number of filled spaces in top four rows
+		SimpleMatrix topFourRows = board.extractMatrix(State.ROWS - 4, State.ROWS, 0, State.COLS);
+		double topRows = topFourRows.elementSum();
 		
 		// Return the features.  Can change which features are used by 
 		// changing assignments to resTemp and nFeatures above
 		//int curInd = 2*State.COLS + State.ROWS;
 		int curInd = 0;
 		double[] indivFeatures =  {maxH, minH, nHoles, 
-			nEmptyBelow,  avgH, minRow, maxRow, avgRow, erodedRows};
+			nEmptyBelow, avgH, minRow, maxRow, erodedRows};
 		System.arraycopy(indivFeatures, 0, resTemp[0], curInd, indivFeatures.length);
 		SimpleMatrix res = new SimpleMatrix(resTemp);
 		res = res.transpose();
