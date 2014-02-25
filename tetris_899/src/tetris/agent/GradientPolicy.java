@@ -85,6 +85,7 @@ public class GradientPolicy implements Policy {
 			t = t_list[i];
 			//Move through every tuple in this trajectory, maintaining running averages
 			double averageReward = t.sum_rewards(0, 1.0)/t.tuples.size();
+//			System.out.format("Trajectory %d%n", i);
 			for(int j=0; j<t.tuples.size()-1; j++)
 			{
 				//z_{t+1} = gamma*z_{t} + gradient(s,a)
@@ -111,6 +112,7 @@ public class GradientPolicy implements Policy {
 			}
 			//Add this to the corresponding column of the big container matrix
 			deltas.insertIntoThis(0, i, delta);
+//			delta.transpose().print();
 		}
 		//Alright, now average these deltas together into our final delta
 		//Interesting idea - use the covariance of these vectors to determine how much we step along this gradient
@@ -119,7 +121,11 @@ public class GradientPolicy implements Policy {
 		{
 			mean_delta.set(i, deltas.extractVector(true, i).elementSum());
 		}
-		mean_delta.scale(1.0/deltas.numCols());
+		mean_delta = mean_delta.scale(1.0/deltas.numCols());
+		
+//		System.out.println("Mean delta:");
+//		mean_delta.transpose().print();
+		
 		
 		//Step params in this direction
 		//TODO Figure out how to be smarter about the step

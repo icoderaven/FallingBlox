@@ -100,7 +100,8 @@ public abstract class TrajectoryGenerator implements Callable<Trajectory> {
 		// Record history and take a step
 		Action action = _policy.get_action(_currentState);
 		double reward = _rewardFunc.get_reward(_currentState, action);
-		_trajectory.add(_currentState, action, lastReward);
+		State stateCopy = new State(_currentState);
+		_trajectory.add(stateCopy, action, lastReward);
 		
 		// This accounts for odd lag in our reward functions
 		lastReward = reward;
