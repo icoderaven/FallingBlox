@@ -25,11 +25,14 @@ public class GradientPolicy implements Policy {
 //			_params.set(i,Math.random());
 //		}
 	
-		_params.set(_params.numRows() - 6, -200); // Hole weight
-		_params.set(_params.numRows() - 8, -20); // Max height weight
-		_params.set(_params.numRows() - 5, -200); // Empty below top weight
-		_params.set(_params.numRows() - 4, -200); // Avg height weight
-		_params.set(_params.numRows() - 1, 200); // Eroded rows weight
+//		_params.set(_params.numRows() - 6, -200); // Hole weight
+//		_params.set(_params.numRows() - 8, -20); // Max height weight
+//		_params.set(_params.numRows() - 5, -200); // Empty below top weight
+//		_params.set(_params.numRows() - 4, -200); // Avg height weight
+//		_params.set(_params.numRows() - 1, 200); // Eroded rows weight
+		double[][] initParams = {{-40, -1, -80, -40, -40, 0, -1, 50}};
+		_params = new SimpleMatrix(initParams);
+		_params = _params.transpose();
 //		normalize_params();
 	}
 
@@ -92,20 +95,20 @@ public class GradientPolicy implements Policy {
 				SimpleMatrix grad = gradient(t.tuples.get(j).state, t.tuples.get(j).action);
 				
 				// Summation code
-				delta = delta.plus( grad.scale( averageReward ));
+				//delta = delta.plus( grad.scale( averageReward ));
 				
 				// Online update code
-//				z = z.scale(gamma).plus(grad);
+				z = z.scale(gamma).plus(grad);
 				//delta_{t+1} = delta + (1/t+1)(r_{t+1}*z_{t+1} - delta)
 //				delta = delta.plus(1.0/(j+2), z.scale(t.sum_rewards(j+1, 1.0)).minus(delta));
 //				System.out.println("Delta running average:");
 //				delta.transpose().print();
 				
-//				SimpleMatrix rz = z.scale(t.tuples.get(j+1).reward/(j+1));
-//				double deltaRatio = ((double) j)/(j+1);
-//				SimpleMatrix deltn = delta.scale(deltaRatio);
-//				
-//				delta = deltn.plus(rz);
+				// Alternative online update code
+				SimpleMatrix rz = z.scale(t.tuples.get(j+1).reward/(j+1));
+				double deltaRatio = ((double) j)/(j+1);
+				SimpleMatrix deltn = delta.scale(deltaRatio);
+				delta = deltn.plus(rz);
 //				System.out.println("Delta direct calculation:");
 //				delta.transpose().print();
 				
@@ -126,6 +129,15 @@ public class GradientPolicy implements Policy {
 //		System.out.println("Mean delta:");
 //		mean_delta.transpose().print();
 		
+		SimpleMatrix deltaDifference = new SimpleMatrix(deltas.numRows(), deltas.numCols());
+		for(int i = 0; i < deltas.numCols(); i++) {
+			deltaDifference.insertIntoThis(0, i, mean_delta.minus( deltas.extractVector(false, i) ) );
+		}
+
+		SimpleMatrix deltaCovariance = deltaDifference.mult(deltaDifference.transpose());
+		deltaCovariance = deltaCovariance.plus( SimpleMatrix.identity(deltaCovariance.numRows()).scale(0.01) );
+		SimpleMatrix deltaInformation = deltaCovariance.invert();
+		mean_delta = deltaInformation.mult(mean_delta);
 		
 		//Step params in this direction
 		//TODO Figure out how to be smarter about the step
@@ -173,10 +185,18 @@ public class GradientPolicy implements Policy {
 		
 		// Catch instances where exponent underflows and returns all 0
 		if(z == 0) {
+			System.out.println("PDF Underflow!");
 			probs.set(1.0);
 			z = probs.numRows();
 		}
-		return probs.divide(z);
+		
+		probs = probs.divide(z);
+		SimpleMatrix smoother = new SimpleMatrix(moves.length, 1);
+		smoother.set(0.01/moves.length);
+		probs = probs.plus(smoother);
+		probs = probs.divide( probs.elementSum() );
+		
+		return probs;
 	}
 
 	protected double calculate_log_likelihood(State s, Action a) {

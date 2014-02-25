@@ -28,12 +28,11 @@ public class Agent {
 		StateGenerator stateGen = new FixedStateGenerator(s);
 		// Policy policy = new RandomPolicy();
 		RewardFunction func1 = new LinesClearedReward(1.0);
-		RewardFunction func2 = new TurnsAliveReward(0.1);
+		RewardFunction func2 = new TurnsAliveReward(0.0);
 		RewardFunction rewardFunc = new CompositeReward(func1, func2);
 		TrajectoryGenerator trajGen = new FixedLengthTrajectoryGenerator(
 				stateGen, pi, rewardFunc, 1000);
 
-		
 		while (counter < 1) {
 			pi.fit_policy(trajMachine.generate_trajectories(trajGen, 30));
 			counter += 1;
