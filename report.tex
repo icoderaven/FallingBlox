@@ -81,8 +81,8 @@ Since the policy is stochastic, we pick an action to choose by first generating 
 
 
 \section{Results and Discussion}
-For the implemented method, we obtain an average number of rows cleared of .
+For the implemented method, we obtain an average number of rows cleared at 25.57 with a standard deviation of 14.61 over 35 runs.
 
-It is interesting to note that implementing policy gradient hasn't worked as well as we had anticipated. The primary issue we face is that the gradient as determined is not very informative, and as such, even after averaging we do not obtain any improvement after the initial improvement in the learned policy. Perhaps the features do not encapsulate the state space sufficiently, or are not discriminative enough. It could also be that the policy function that we are trying to fit on this set of features does not have the right descriptive power. 
+It is interesting to note that implementing policy gradient has not worked at all as well as we had anticipated. The primary issue we face is that the gradient as determined is not very informative, and as such, even after averaging we do not obtain any improvement after the initial improvement in the learned policy. In addition, it is not clear how much to step in the direction of the gradient, or how to normalize the weight vector (or whether it should). Perhaps the features do not encapsulate the state space sufficiently, or are not discriminative enough. It could also be that the policy function that we are trying to fit on this set of features does not have the right descriptive power. 
 
 \end{document}
