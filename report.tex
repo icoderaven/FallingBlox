@@ -53,15 +53,15 @@ We also do not compute any features from the next piece in the resulting state. 
 
 In looking at the board after taking an action, we consider the features used by human Tetris players.  In general, these are the height of the board, how full the space is, and how many rows can be cleared, which we then separate into a number of individual features.  The height of the board is the primary factor in how likely the player is to die soon, and the density of the board determines both how likely it is that more rows can be cleared (higher reward) and how likely it is that the height will increase.
 
-For the height of the board, we have a feature for each column's individual height, accessed using the \texttt{getTop()} method provided.  We also include separate features for the height of the tallest and shortest columns, and the average height of the columns.
+For the height of the board, our features are based on the individual column heights, accessed using the \texttt{getTop()} method provided.  We include as features the height of the tallest and shortest columns, and the average height of the columns.
 
-We describe the density of the board using the number of filled squares in each row.  As with the columns, we also have separate features for the size of the largest and smallest row and the average number of filled squares in a row.  We also pay particular attention to the empty squares below where the agent has placed pieces.  We have features for the number of holes -- empty squares with a filled square higher in the same column -- in each column, and the total number of holes.  As another measure of density and available space, we also compute the number of empty squares below the highest filled square in the board, whether or not there is a filled square above them. 
+We describe the density of the board using the number of filled squares in the rows.  As with the columns, we have features for the size of the largest and smallest row and the average number of filled squares in a row.  We also pay particular attention to the empty squares below where the agent has placed pieces.  We compute the total number of holes (empty squares with a filled square higher in the same column) in the board.  As another measure of density and available space, we also compute the number of empty squares below the highest filled square in the board, whether or not there is a filled square above them.
 
-Our final feature is the number of rows cleared by making this particular move.  All of our features are normalized by the number of squares in a row or column, or in the entire board, as appropriate.
+Our final feature is the number of rows cleared by making this particular move.
 
 We considered also including other measures of board density, such as the number of overhangs (filled squared with an empty square below them, the counterpart to holes), the average number of filled squares in rows below the top row, or the number of filled squares in the top row, but in the end decided they were not likely to produce significant improvement over our existing feature set.
 
-We sped up the computation of the features by making a binary copy of the board, where filled squares have value $1$ instead of the ID of the piece at that location.  This allows us to compute the number of filled squares in a row or column by addition, and find the gaps by subtraction from the total number of squares in a row or the height of the column.
+We sped up the computation of the features by making a binary copy of the board, where filled squares have value $1$ instead of the ID of the piece at that location.  This allows us to compute the number of filled squares in a row or column by summation, and find the gaps by subtraction from the total number of squares in a row or the height of the column.
 
 
 \section{Implementation Details}
