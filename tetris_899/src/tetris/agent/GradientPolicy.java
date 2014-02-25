@@ -24,7 +24,7 @@ public class GradientPolicy implements Policy {
 //			_params.set(i,Math.random());
 //		}
 	
-		double[][] initParams = {{-40, -1, -80, -40, -40, 0, -1, 50}};
+		double[][] initParams = {{-40, -1, -80, -40, -40, 0, -1, 50, -1, -80, -1, -1}};
 		for(int i = 0; i < initParams[0].length; i++) {
 			_params.set(_params.numRows() - initParams[0].length + i, 
 					initParams[0][i]);
