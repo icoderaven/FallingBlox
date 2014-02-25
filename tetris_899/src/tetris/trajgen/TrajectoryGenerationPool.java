@@ -12,7 +12,7 @@ import java.util.concurrent.*;
 public class TrajectoryGenerationPool {
 
 	final protected ExecutorService _pool;
-	protected TrajectoryGenerator _gen;
+	public TrajectoryGenerator _gen;
 	
 	/**
 	 * Create the pooled generator with a set number of worker threads.
@@ -48,8 +48,9 @@ public class TrajectoryGenerationPool {
 		for(int i = 0; i < numTrajectories; i++) {
 			try {
 				Trajectory traj = taskService.take().get();
-				rewardSum += traj.sum_rewards(0, 1.0);
+				rewardSum += traj.sum_rewards(0, 0.9);
 				lengthSum += traj.tuples.size();
+//				System.out.format("Completed task %d with reward %f and length %d%n", i, traj.sum_rewards(0,  1.0), traj.tuples.size());
 				trajectories[i] = traj;
 				//double tick = System.currentTimeMillis();
 				//System.out.format("Completed task %d/%d, Average rate %f%n", 

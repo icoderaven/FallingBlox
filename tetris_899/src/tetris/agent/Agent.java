@@ -10,6 +10,16 @@ public class Agent {
 	public GradientPolicy pi;
 
 	public Agent() {
+		 try {
+			SimpleMatrix paramMatrix = SimpleMatrix.loadCSV("params.txt");
+			Feature feat = new BoardFeature();
+			pi = new GradientPolicy(feat, paramMatrix);
+			System.out.println("Param log loaded.");
+			paramMatrix.transpose().print();
+		 } catch(Exception e) {
+			 System.out.println("No param log found. Creating new policy.");
+			 pi = new GradientPolicy();
+		 }
 		pi = new GradientPolicy();
 		// File to store to
 				String logname = "params.txt";
@@ -69,7 +79,7 @@ public class Agent {
 		SimpleMatrix params = pi.get_params();
 //		System.out.format("Hole weight %f%n", params.get(features.numRows() - 5));
 //		System.out.println("Parameters:");
-		params.transpose().print();
+//		params.transpose().print();
 
 		return move;
 	}

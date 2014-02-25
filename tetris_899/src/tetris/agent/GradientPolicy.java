@@ -15,15 +15,16 @@ public class GradientPolicy implements Policy {
 	
 	public GradientPolicy()
 	{
-		_feature = new TopFourFeatures();
+		_feature = new BoardFeature();
 		//_feature = new DefaultFeature();
 		_params = new SimpleMatrix(_feature.get_feature_dimension(),1);
+		_params.set(1.0);
 		
 		for(int i=0;i < _params.numRows(); i++)
 		{
 			_params.set(i,Math.random());
 		}
-//	
+	
 //		double[][] initParams = {{-40, -1, -80, -40, -40, 0, -1, 50}};
 //		for(int i = 0; i < initParams[0].length; i++) {
 //			_params.set(_params.numRows() - initParams[0].length + i, 
@@ -52,6 +53,7 @@ public class GradientPolicy implements Policy {
 	public Action get_action(State curr_state) {
 		//Obtain the distribution of probabilities for the current action 
 		SimpleMatrix dist = pi(curr_state);
+//		dist.transpose().print();
 		
 		int index = dist.numRows()-1;
 		//Get a random number sampled from the uniform distribution  
@@ -86,26 +88,30 @@ public class GradientPolicy implements Policy {
 			//Move through every tuple in this trajectory, maintaining running averages
 			double averageReward = t.sum_rewards(0, 1.0)/t.tuples.size();
 //			System.out.format("Trajectory %d%n", i);
-			for(int j=0; j<t.tuples.size()-1; j++)
+			for(int j=0; j<t.tuples.size(); j++)
 			{
 				//z_{t+1} = gamma*z_{t} + gradient(s,a)
 				SimpleMatrix grad = gradient(t.tuples.get(j).state, t.tuples.get(j).action);
 				
-				// Summation code
-				//delta = delta.plus( grad.scale( averageReward ));
+				// Instantaneous reward, non-discounted
+//				delta = delta.plus( grad.scale( t.tuples.get(j).reward) );
+//				System.out.format("Reward at step %d: %f%n", j, t.tuples.get(j).reward);
 				
-				// Online update code
+				// Average reward, non-discounted
+//				delta = delta.plus( grad.scale( averageReward ));
+				
+				// Running average reward, discounted
 				z = z.scale(gamma).plus(grad);
 				//delta_{t+1} = delta + (1/t+1)(r_{t+1}*z_{t+1} - delta)
-//				delta = delta.plus(1.0/(j+2), z.scale(t.sum_rewards(j+1, 1.0)).minus(delta));
+				delta = delta.plus(1.0/(j+2), z.scale(t.sum_rewards(j+1, 1.0)).minus(delta));
 //				System.out.println("Delta running average:");
 //				delta.transpose().print();
 				
 				// Alternative online update code
-				SimpleMatrix rz = z.scale(t.tuples.get(j+1).reward/(j+1));
-				double deltaRatio = ((double) j)/(j+1);
-				SimpleMatrix deltn = delta.scale(deltaRatio);
-				delta = deltn.plus(rz);
+//				SimpleMatrix rz = z.scale(t.tuples.get(j+1).reward/(j+1));
+//				double deltaRatio = ((double) j)/(j+1);
+//				SimpleMatrix deltn = delta.scale(deltaRatio);
+//				delta = deltn.plus(rz);
 //				System.out.println("Delta direct calculation:");
 //				delta.transpose().print();
 				
@@ -171,10 +177,21 @@ public class GradientPolicy implements Policy {
 			}
 			exponents.set(a_prime, logLikelihood);
 		}
+//		double filteredMean = 0.0;
+//		int meanCounter = 0;
+//		for (int a_prime = 0; a_prime < moves.length; a_prime++) {
+//			double logLikelihood = calculate_log_likelihood(s, new Action(a_prime));
+//			if(logLikelihood > -10) {
+//				filteredMean += logLikelihood;
+//				meanCounter++;
+//			}
+//			exponents.set(a_prime, logLikelihood);
+//		}
+//		filteredMean = filteredMean/meanCounter;
 		
 		double z = 0;
 		for (int a_prime = 0; a_prime < moves.length; a_prime++) {
-			double normalizedExponent = exponents.get(a_prime) - maxVal + 5.0;
+			double normalizedExponent = exponents.get(a_prime) - maxVal;
 			double likelihood = Math.exp(normalizedExponent);
 			z += likelihood;
 			probs.set(a_prime, likelihood);
@@ -187,9 +204,10 @@ public class GradientPolicy implements Policy {
 			z = probs.numRows();
 		}
 		
+		// Normalize and add exploration
 		probs = probs.divide(z);
 		SimpleMatrix smoother = new SimpleMatrix(moves.length, 1);
-		smoother.set(0.01/moves.length);
+		smoother.set(0.015/moves.length);
 		probs = probs.plus(smoother);
 		probs = probs.divide( probs.elementSum() );
 		
