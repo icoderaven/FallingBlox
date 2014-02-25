@@ -31,7 +31,7 @@ public class Trainer {
 		 try {
 			SimpleMatrix paramMatrix = SimpleMatrix.loadCSV(logname);
 			Feature feat = new BoardFeature();
-			pi = new GradientPolicy(feat, paramMatrix.transpose());
+			pi = new GradientPolicy(feat, paramMatrix);
 			System.out.println("Param log loaded.");
 		 } catch(Exception e) {
 			 System.out.println("No param log found. Creating new policy.");

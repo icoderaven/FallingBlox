@@ -18,7 +18,6 @@ public class GradientPolicy implements Policy {
 		_feature = new BoardFeature();
 		//_feature = new DefaultFeature();
 		_params = new SimpleMatrix(_feature.get_feature_dimension(),1);
-		_params = new SimpleMatrix(_params);
 		
 //		for(int i=0;i < _params.numRows(); i++)
 //		{
@@ -31,8 +30,6 @@ public class GradientPolicy implements Policy {
 					initParams[0][i]);
 		}
 		
-		_params = new SimpleMatrix(initParams);
-		_params = _params.transpose();
 //		normalize_params();
 	}
 
