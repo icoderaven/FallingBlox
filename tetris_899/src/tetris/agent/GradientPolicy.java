@@ -2,6 +2,7 @@ package tetris.agent;
 
 import org.ejml.simple.SimpleMatrix;
 
+import tetris.agent.Trajectory.SARTuple;
 import tetris.simulator.*;
 
 /** A Policy interface implementation for Policy Gradient method
@@ -12,6 +13,9 @@ public class GradientPolicy implements Policy {
 
 	public Feature _feature;
 	private SimpleMatrix _params;
+	private SimpleMatrix _normParams;
+	private double _temperature;
+	private double _gamma;
 	
 	public GradientPolicy()
 	{
@@ -19,6 +23,12 @@ public class GradientPolicy implements Policy {
 		//_feature = new DefaultFeature();
 		_params = new SimpleMatrix(_feature.get_feature_dimension(),1);
 		_params.set(0.0);
+		
+		_normParams = new SimpleMatrix(_feature.get_feature_dimension(), 1);
+		_normParams.set(0.0);
+	
+		_temperature = 100.0;
+		_gamma = 0.1;
 		
 //		for(int i=0;i < _params.numRows(); i++)
 //		{
@@ -35,16 +45,22 @@ public class GradientPolicy implements Policy {
 	public GradientPolicy(Feature featureGenerator, SimpleMatrix parameters) {
 		_feature = featureGenerator;
 		_params = parameters;
+		_normParams = new SimpleMatrix(_feature.get_feature_dimension(), 1);
+		_temperature = 100.0;
+		_gamma = 0.1;
+		normalize_params();
 	}
 	
 	public GradientPolicy(GradientPolicy other) {
 		_feature = other._feature.copy();
 		_params = new SimpleMatrix(other._params);
-		_params = new SimpleMatrix(other._params);
+		_normParams = new SimpleMatrix(other._normParams);
+		_temperature = other._temperature;
+		_gamma = other._gamma;
 	}
 	
 	public SimpleMatrix get_params() {
-		return new SimpleMatrix(_params);
+		return new SimpleMatrix(_normParams);
 	}
 	
 	@Override
@@ -75,36 +91,146 @@ public class GradientPolicy implements Policy {
 		fit_policy(t_list, 1.0);
 	}
 	
+	private SimpleMatrix calculate_baselines(Trajectory[] t_list) {
+		
+		SimpleMatrix baselines = new SimpleMatrix(_feature.get_feature_dimension(), 1);
+		
+		// Denominator and numerator accumulators over trajectory
+		SimpleMatrix numerAcc = new SimpleMatrix(_feature.get_feature_dimension(), 1);
+		SimpleMatrix denomAcc = new SimpleMatrix(_feature.get_feature_dimension(), 1);
+		
+		numerAcc.set(0);
+		denomAcc.set(0);
+		
+		SimpleMatrix trajGradSum = new SimpleMatrix(_feature.get_feature_dimension(), 1);
+		
+		for(int i = 0; i < t_list.length; i++) {
+			trajGradSum.set(0);
+			
+			for(int j = 0; j < t_list[i].tuples.size(); j++) {
+				
+				SARTuple sar = t_list[i].tuples.get(j);
+				SimpleMatrix grad = gradient(sar.state, sar.action);
+				
+				// Update the sum of all gradients in this trajectory so far
+				trajGradSum = trajGradSum.plus( grad );
+				
+			}
+			
+			// Calculate element-wise square of sum
+			SimpleMatrix trajGradSumSquared = trajGradSum.elementMult( trajGradSum );
+			double discountedReward = t_list[i].sum_rewards_tail(0, _gamma);
+			
+			// Averaged over trajectories
+			numerAcc = numerAcc.plus( trajGradSumSquared.scale(discountedReward) );
+			denomAcc = denomAcc.plus( trajGradSumSquared );
+		}
+		
+		numerAcc = numerAcc.scale( 1.0/t_list.length );
+		denomAcc = denomAcc.scale( 1.0/t_list.length );
+		
+		for(int i = 0; i < _feature.get_feature_dimension(); i++) {
+			double bi = numerAcc.get(i)/(denomAcc.get(i) + 1E-6);
+			baselines.set(i, bi);
+		}
+		return baselines;
+		
+	}
+	
+//	private SimpleMatrix calculate_baselines(Trajectory[] t_list) {
+//
+//		// First find the longest trajectory so we know how many baselines to calculate
+//		int maxLength = 0;
+//		for(int i = 0; i < t_list.length; i++) {
+//			if(t_list[i].tuples.size() > maxLength) {
+//				maxLength = t_list[i].tuples.size();
+//			}
+//		}
+//		
+//		// One baseline value per gradient dimension per timestep
+//		SimpleMatrix baselines = new SimpleMatrix(_feature.get_feature_dimension(), maxLength);
+//		SimpleMatrix gradSums = new SimpleMatrix(_feature.get_feature_dimension(), t_list.length);
+//		double discount = 1.0;
+//		
+//		gradSums.set(0);
+//		
+//		// Denominator and numerator accumulators over trajectory
+//		SimpleMatrix numerAcc = new SimpleMatrix(_feature.get_feature_dimension(), 1);
+//		SimpleMatrix denomAcc = new SimpleMatrix(_feature.get_feature_dimension(), 1);
+//		for(int i = 0; i < maxLength; i++) {
+//			numerAcc.set(0);
+//			denomAcc.set(0);
+//			
+//			for(int j = 0; j < t_list.length; j++) {
+//				
+//				if(i >= t_list[j].tuples.size()) { continue; } // Trajectory contributes nothing
+//				
+//				SARTuple sar = t_list[j].tuples.get(i);
+//				SimpleMatrix grad = gradient(sar.state, sar.action);
+//				
+//				// Update the sum of all gradients in this trajectory so far
+//				SimpleMatrix trajGradSum = gradSums.extractVector(false, j).plus(grad);
+//				gradSums.insertIntoThis(0, j, trajGradSum);
+//				
+//				// Calculate element-wise square of sum
+//				SimpleMatrix trajGradSumSquared = trajGradSum.elementMult( trajGradSum );
+//				
+//				// Add to the baseline estimate accumulator for this time step
+//				denomAcc = denomAcc.plus( trajGradSumSquared );
+//				numerAcc = numerAcc.plus( trajGradSumSquared.scale( discount*sar.reward ) );
+//				
+//			}
+//			
+//			// Averaged over trajectories
+//			numerAcc = numerAcc.scale( 1.0/t_list.length );
+//			denomAcc = denomAcc.scale( 1.0/t_list.length );
+//			for(int j = 0; j < _feature.get_feature_dimension(); j++) {
+//				double bji = numerAcc.get(j)/(denomAcc.get(j) + 1E-6);
+//				baselines.set(j, i, bji );
+//			}
+//			
+//			discount = discount*_gamma;
+//			
+//		}
+//		
+//		return baselines;
+//		
+//	}
+	
 	public void fit_policy(Trajectory[] t_list, double step_size) {
 		//TODO Average gradient over trajectories
 		//Create a container for all the evaluated deltas
-		SimpleMatrix deltas = new SimpleMatrix(_params.numRows(), t_list.length);
 		
-		SimpleMatrix delta = new SimpleMatrix(_params.numRows(), 1);
-		SimpleMatrix z = new SimpleMatrix(_params.numRows(), 1);
-		double gamma = 0.99; //Constant for hysteresis of z
-		
+		SimpleMatrix gradSum = new SimpleMatrix(_params.numRows(), 1);
+		SimpleMatrix trajGradSum = new SimpleMatrix(_params.numRows(), 1);
 		SimpleMatrix gradCovs = new SimpleMatrix(_params.numRows(), _params.numRows());
+		
 		gradCovs.set(0);
 		
+		// Calculate optimal baselines
+		SimpleMatrix baselines = calculate_baselines(t_list);
+		
+//		baselines.transpose().print();
+		
+		int contrib = 0;
 		for(int i=0; i<t_list.length; i++)
 		{
-			delta.set(0);
-			z.set(0);
-			Trajectory t = t_list[i];
-			//Move through every tuple in this trajectory, maintaining running averages
-			double averageReward = t.sum_rewards(0, 1.0)/t.tuples.size();
-			SimpleMatrix gradCovSum = new SimpleMatrix(_params.numRows(), _params.numRows());
-			gradCovSum.set(0);		
+			trajGradSum.set(0);
 			
-//			System.out.format("Trajectory %d%n", i);
-			
-			for(int j=0; j<t.tuples.size(); j++)
+			double discount = 1.0;
+			for(int j=0; j < t_list[i].tuples.size(); j++)
 			{
-				//z_{t+1} = gamma*z_{t} + gradient(s,a)
-				SimpleMatrix grad = gradient(t.tuples.get(j).state, t.tuples.get(j).action);
+				SARTuple sar = t_list[i].tuples.get(j);
+				SimpleMatrix grad = gradient(sar.state, sar.action);
+				trajGradSum = trajGradSum.plus(grad);
 				
-				gradCovSum = gradCovSum.plus( grad.mult( grad.transpose() ) );
+				SimpleMatrix discountedReward = new SimpleMatrix(_params.numRows(), 1);
+				discountedReward.set( sar.reward*discount );
+				SimpleMatrix advantage = discountedReward.minus( baselines );
+				gradSum = gradSum.plus( trajGradSum.elementMult( advantage ) );
+				
+				// Keep a running total of the outer products for covariance calculation later
+				gradCovs = gradCovs.plus( grad.mult( grad.transpose() ) );
 				
 				// Instantaneous reward, non-discounted
 //				delta = delta.plus( grad.scale( t.tuples.get(j).reward) );
@@ -114,47 +240,38 @@ public class GradientPolicy implements Policy {
 //				delta = delta.plus( grad.scale( averageReward ));
 				
 				// Reward to go, discounted
-				delta = delta.plus( grad.scale( t.sum_rewards(j+1, gamma) - averageReward ) );
+//				delta = delta.plus( grad.scale( t.sum_rewards_tail(j, _gamma) ) );
 				
 				// Running average reward, discounted
 //				z = z.scale(gamma).plus(grad);
 				//delta_{t+1} = delta + (1/t+1)(r_{t+1}*z_{t+1} - delta)
-//				delta = delta.plus(1.0/(j+2), z.scale(t.sum_rewards(j+1, 1.0)).minus(delta));
+//				delta = delta.plus(1.0/(j+2), z.scale(t.sum_rewards(j, 1.0)).minus(delta));
 //				System.out.println("Delta running average:");
 //				delta.transpose().print();
 				
+				contrib++;
+				discount = discount * _gamma;
 			}
-		
 
-			SimpleMatrix gradCov = gradCovSum.scale(1.0/t.tuples.size());
-			gradCovs = gradCovs.plus(gradCov);
-			
-			//Add this to the corresponding column of the big container matrix
-			deltas.insertIntoThis(0, i, delta);
-//			delta.transpose().print();
 		}
 		
-		// Calculate average deltas
-		SimpleMatrix mean_delta = new SimpleMatrix(_params.numRows(),1);
-		for(int i=0; i<deltas.numRows(); i++)
-		{
-			mean_delta.set(i, deltas.extractVector(true, i).elementSum());
-		}
-		mean_delta = mean_delta.scale(1.0/deltas.numCols());
+		// Averaged over each time in each trajectory
+		gradSum = gradSum.scale(1.0/contrib);
+		gradCovs = gradCovs.scale(1.0/contrib);
 		
 		// Calculate information matrix
-		gradCovs = gradCovs.scale(1.0/t_list.length);
 		gradCovs = gradCovs.plus( SimpleMatrix.identity(gradCovs.numRows()).scale(1.0) ); // Hack smoothing
 		SimpleMatrix gradInfo = gradCovs.invert();
 		
 		// Scale delta by info matrix
-		mean_delta = gradInfo.mult(mean_delta);
+		SimpleMatrix grad = gradInfo.mult(gradSum);
 		
 		//Step params in this direction
 		double step = step_size;
+		_params = _params.plus(step, grad);
+		normalize_params();
 		
-		_params = _params.plus(step, mean_delta);
-		System.out.format("Step size: %f%n", mean_delta.normF());
+		System.out.format("Step size: %f%n", Math.sqrt(grad.normF()) );
 	}
 
 	@Override
@@ -208,9 +325,11 @@ public class GradientPolicy implements Policy {
 		}
 		
 		// Normalize and add exploration
+		double beta = 0.01; // Chance of random action
 		probs = probs.divide(z);
 		SimpleMatrix smoother = new SimpleMatrix(moves.length, 1);
-		smoother.set(0.015/moves.length);
+		smoother.set(beta/moves.length);
+		probs = probs.scale(1.0 - beta);
 		probs = probs.plus(smoother);
 		probs = probs.divide( probs.elementSum() );
 		
@@ -219,13 +338,29 @@ public class GradientPolicy implements Policy {
 
 	protected double calculate_log_likelihood(State s, Action a) {
 		SimpleMatrix temp = _feature.get_feature_vector(s,a);
-		return _params.dot(temp);
+		return _normParams.dot(temp)/_temperature;
 	}
 	
 	public double function_evaluator(State s, Action a) {
 		return Math.exp(calculate_log_likelihood(s, a));
 	}
 
+	public void set_temperature(double temp) {
+		_temperature = temp;
+	}
+	
+	public double get_temperature() {
+		return _temperature;
+	}
+	
+	public void set_gamma(double gam) {
+		_gamma = gam;
+	}
+	
+	public double get_gamma() {
+		return _gamma;
+	}
+	
 	@Override
 	public SimpleMatrix gradient(State s, Action a) {
 		SimpleMatrix J_for_a = _feature.get_feature_vector(s, a);
@@ -250,8 +385,17 @@ public class GradientPolicy implements Policy {
 		return J_for_a.minus(E_for_s);
 	}
 
-//	protected void normalize_params() {
-//		
+	protected void normalize_params() {
+		
+	// Normalize the parameter vector?
+//	_normParams = _params.scale( 1.0/Math.sqrt( _params.normF() ) );
+//	_normParams = _params;
+		
+	double mean = _params.elementSum()/_params.numRows();
+	SimpleMatrix shift = new SimpleMatrix( _params.numRows(), 1);
+	shift.set(-mean);
+	_normParams = _params.plus(shift);
+	
 //		double maxVal = Double.NEGATIVE_INFINITY;
 //		
 ////		System.out.println("Params:");
@@ -266,9 +410,9 @@ public class GradientPolicy implements Policy {
 //		for(int i = 0; i < _normalizedParams.numRows(); i++) {
 //			_normalizedParams.set(i, _params.get(i) - maxVal + 1.0);
 //		}
-////		System.out.println("Normalized Params:");
-////		_normalizedParams.transpose().print();
-//	}
+//		System.out.println("Normalized Params:");
+//		_normalizedParams.transpose().print();
+	}
 	
 	@Override
 	public Policy copy() {

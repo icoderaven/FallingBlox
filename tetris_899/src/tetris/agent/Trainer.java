@@ -46,11 +46,20 @@ public class Trainer {
 		TrajectoryGenerationPool trajMachine = new TrajectoryGenerationPool(8); // # threads
 
 		StateGenerator stateGen = new FixedStateGenerator(startState);
-		RewardFunction func1 = new LinesClearedReward(10.0);
-		RewardFunction func2 = new TurnsAliveReward(1.0);
-		RewardFunction func3 = new DeathReward(-100); // Penalty of -100 for dieing
+		RewardFunction func1 = new LinesClearedReward(1.0);
+		RewardFunction func2 = new TurnsAliveReward(0.0);
+		RewardFunction func3 = new DeathReward(-1000); // Penalty of -100 for dieing
 		RewardFunction comp1 = new CompositeReward(func1, func2);
 		RewardFunction rewardFunc = new CompositeReward(comp1, func3);
+		
+		double startTemp = 1.0;
+		pi.set_temperature(startTemp);
+		
+		double startStepSize = 1.0;
+		
+		double startGamma = 0.99;
+		double gammaConstant = -0.01; // 30 iterations to decay to gamma = 0.95
+		pi.set_gamma(startGamma);
 		
 		try {
 			while (true) {
@@ -58,10 +67,8 @@ public class Trainer {
 				TrajectoryGenerator trajGen = new FixedLengthTrajectoryGenerator(stateGen, pi, rewardFunc, maxTrajectoryLength);
 				Trajectory[] trajectories = trajMachine.generate_trajectories(trajGen, trajectoryBatchSize);
 				
-				double step_size = 0.1; // For now...
-				
 				for(int i = 0; i < updateBatchSize; i++) {	
-					pi.fit_policy(trajectories, step_size);
+					pi.fit_policy(trajectories, startStepSize/(updateIterationCounter+1));
 				}
 				
 				SimpleMatrix parameters = pi.get_params();
@@ -69,8 +76,15 @@ public class Trainer {
 				parameters.transpose().print();
 				parameters.saveToFileCSV(logname);
 			
-				System.out.format("Ran %d iterations so far.%n", updateIterationCounter);
 				updateIterationCounter++;
+				
+				// Reduce temperature at each step
+//				pi.set_temperature(startTemp/updateIterationCounter);
+//				double nextGamma = (1.0 - startGamma*Math.exp(updateIterationCounter*gammaConstant));
+//				pi.set_gamma( nextGamma );
+				
+//				System.out.format("Ran %d iterations so far. Gamma: %f%n", updateIterationCounter, nextGamma);
+				System.out.format("Ran %d iterations so far.%n", updateIterationCounter);
 				
 			}
 		} catch(Exception e) {

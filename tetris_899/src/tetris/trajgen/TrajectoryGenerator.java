@@ -83,11 +83,7 @@ public abstract class TrajectoryGenerator implements Callable<Trajectory> {
 	 * starting state.
 	 */
 	protected void initialize() {
-		if(_stateGen != null) {
-			_currentState = _stateGen.generate_state();
-		} else {
-			
-		}
+		_currentState = _stateGen.generate_state();
 //		lastReward = 0;
 		_trajectory = new Trajectory();
 	}
@@ -99,14 +95,24 @@ public abstract class TrajectoryGenerator implements Callable<Trajectory> {
 		
 		// Record history and take a step
 		Action action = _policy.get_action(_currentState);
+		
+//		System.out.format("Making an action %d%n", action.index);
+		
 		double reward = _rewardFunc.get_reward(_currentState, action);
-		State stateCopy = new State(_currentState);
-		_trajectory.add(stateCopy, action, reward);
+//		State stateCopy = new State(_currentState); // Not needed because SARTuple makes a copy
+		_trajectory.add(_currentState, action, reward);
 		
 		// This accounts for odd lag in our reward functions
 //		lastReward = reward;
 		
 		action.apply(_currentState); // This modifies _currentState!
+		
+//		if(_currentState.hasLost()) {
+//			System.out.format("Died in step on turn %d%n", _currentState.getTurnNumber());
+//		} else {
+//			System.out.format("Still alive and kicking on turn %d%n", _currentState.getTurnNumber());
+//		}
+		
 	}
 	
 	/**

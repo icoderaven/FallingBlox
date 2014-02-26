@@ -22,6 +22,9 @@ public class DeathReward extends RewardFunction {
 	protected double calculate_reward(State state, Action action) {
 		State copyState = new State(state);
 		action.apply(copyState);
+		if (copyState.hasLost()) {
+//			System.out.format("Death is here at turn %d!%n", copyState.getTurnNumber());
+		}
 		return (copyState.hasLost()) ? 1.0 : 0.0;
 	}
 
