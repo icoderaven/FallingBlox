@@ -14,23 +14,20 @@ import java.util.*;
 
 public class BoardFeature implements Feature {
 		
-	public int nFeatures = 9 + 2*State.COLS - 1;
+	public int nFeatures = 13 + 2*State.COLS - 1;
 	
-    public SimpleMatrix get_feature_vector(State temp_s, Action a)
+    public SimpleMatrix get_feature_vector(State prev_s, Action a)
     {    
+    	long startTime = System.nanoTime();
+    	
     	// Prepare to return the features
 		double rows = (double) State.ROWS;
 		double cols = (double) State.COLS;
 		int curInd = 0;
 		double[][] resTemp = new double[1][nFeatures];
-		// Feature vector is height of each col, # of holes in each col, number of 
-		// filled spaces in each row, height of tallest col, height of shortest col,
-		// total number of holes, number of empty spaces below the highest point 
-		// on the board, avg height of columns, number of filled spaces in emptiest 
-		// row, number filled in fullest row, avg of rows
     	
-    	// Look at the board after taking the action
-		State s = new State(temp_s);
+    	// Extract the board before taking the action
+		State s = new State(prev_s);
 		int numRowsCleared = s.getRowsCleared();
 		
 		SimpleMatrix prevBoard = new SimpleMatrix(State.ROWS, State.COLS) ;
@@ -43,11 +40,14 @@ public class BoardFeature implements Feature {
 			}
 		}
 		
-		// Get board afterwards
+		// Take the action
 		s.makeMove(a.index);
-    	int erodedRows = s.getRowsCleared() - numRowsCleared;
 		
-    	// Extract the board and set all nonzero values to 1
+		// Feature: number of rows cleared/eroded
+    	int erodedRows = s.getRowsCleared() - numRowsCleared;
+    	resTemp[0][curInd++] = erodedRows;
+		
+    	// Extract the new board and set all nonzero values to 1
 		SimpleMatrix board = new SimpleMatrix(State.ROWS, State.COLS) ;
 		int[][] field = s.getField();
 		for(int i=0; i< s.ROWS; i++)
@@ -57,75 +57,86 @@ public class BoardFeature implements Feature {
 				board.set(i, j,  (double)Math.min(field[i][j], 1));
 			}
 		}
-
-		// Compute the features:
 		
 		// Height of tallest column, shortest column
 		int[] temp = s.getTop();
 		Arrays.sort(temp);
-		double maxH = temp[temp.length-1];
-		double minH = temp[0];
+		
+		int maxH = temp[temp.length-1];
+		resTemp[0][curInd++] = maxH;
+		int minH = temp[0];
+		resTemp[0][curInd++] = minH;
 
-		// Average column height
-		// Number of "holes" -- empty slots with a full slot higher in the col
-		// Number of empty slots below the top row
-		// Height and number of holes for each column
 		int[] colHeight = s.getTop();
-		double[] colHoles = new double[s.COLS];
-		double nHoles = 0;
-		double nEmptyBelow = 0;
-		double totalHeight = 0.0;
+		int totalHeight = 0;
+		
+		// Number of holes
+		int nHoles = 0;
+		int[] colHoles = new int[State.COLS];
+		
+
+		// Number of empty slots below the top row
+		//double nEmptyBelow = 0;
 		
 		for(int i=0; i < s.COLS; i++) {
-			double h = colHeight[i];
+			// Column heights
+			int h = colHeight[i];
+			resTemp[0][curInd++] = h;
+			
 			SimpleMatrix col = board.extractVector(false, i);
 			double nFullCol = col.elementSum();
-			nHoles += h - nFullCol;
-			colHoles[i] = h - nFullCol;
-			nEmptyBelow += maxH - nFullCol;
-			totalHeight += h;
+			colHoles[i] = (int)(h - nFullCol);
+			nHoles += colHoles[i];
 			
-			//resTemp[0][i] = h/rows;
-			//resTemp[0][State.COLS + i] = (h - nFullCol)/rows;
+			//nEmptyBelow += maxH - nFullCol;
+			totalHeight += h;
 		}
 		
-		double avgH = totalHeight / s.COLS;
+		// Mean column height
+		double avgH = totalHeight / cols;
+		resTemp[0][curInd++] = avgH;
+		// Max - mean height
+		double maxAvgDiff = maxH - avgH;
+		resTemp[0][curInd++] = maxAvgDiff;
+		// Mean - min height
+		double minAvgDiff = avgH - minH;
+		resTemp[0][curInd++] = minAvgDiff;		
+
 
 		// Size of most-filled row, least, average, average below maxH
-		double[] rowFill = new double[s.ROWS];
-		double totalRowFill = 0.0;
-		for(int i=0; i < s.ROWS; i++) {
-			SimpleMatrix row = board.extractVector(true, i);
-			double nFullRow = row.elementSum();
-			rowFill[i] = nFullRow;
-			totalRowFill += nFullRow;
+		//double[] rowFill = new double[s.ROWS];
+		//double totalRowFill = 0.0;
+		//for(int i=0; i < s.ROWS; i++) {
+			//SimpleMatrix row = board.extractVector(true, i);
+			//double nFullRow = row.elementSum();
+			//rowFill[i] = nFullRow;
+			//totalRowFill += nFullRow;
 			
 			//resTemp[0][2*State.COLS + i] = nFullRow/cols;
-		}
-		Arrays.sort(rowFill);
-		double minRow = rowFill[0];
-		double maxRow = rowFill[rowFill.length - 1];
-		double avgRow = totalRowFill / s.ROWS;
+		//}
+		//Arrays.sort(rowFill);
+		//double minRow = rowFill[0];
+		//double maxRow = rowFill[rowFill.length - 1];
+		//double avgRow = totalRowFill / s.ROWS;
 		//double avgRowFilled = totalRowFill / maxH;  // could divide by zero
 		
 		// Rows removed
 		//int rGone = s.getRowsCleared();
 		
 		// Number of filled spaces in top row
-		SimpleMatrix highestRow = board.extractVector(true, (int)maxH);
-		double nHighestRow = highestRow.elementSum();
+		//SimpleMatrix highestRow = board.extractVector(true, (int)maxH);
+		//double nHighestRow = highestRow.elementSum();
 		
 		// Features from: http://hal.archives-ouvertes.fr/docs/00/41/89/54/PDF/article.pdf
 		
 		// Column differences
+		double totalHDiff = 0.0;
 		for(int i = 0; i < State.COLS - 1; i++) {
-			resTemp[0][curInd++] = Math.abs(colHeight[i] - colHeight[i+1]);
+			double d = Math.abs(colHeight[i] - colHeight[i+1]);
+			resTemp[0][curInd++] = d;
+			totalHDiff += d;
 		}
-		
-		// Column Heights
-		for(int i = 0; i < State.COLS; i++) {
-			resTemp[0][curInd++] = colHeight[i];
-		}
+		resTemp[0][curInd++] = totalHDiff;
 		
 		// Landing height of last piece
 		// Not sure how to quickly calculate this
@@ -142,6 +153,7 @@ public class BoardFeature implements Feature {
 				prevBlock = nextBlock;
 			}
 		}
+		resTemp[0][curInd++] = numFlips;
 		
 		// Height inertia
 		double hInertia = 0;
@@ -150,6 +162,35 @@ public class BoardFeature implements Feature {
 				hInertia += board.get(j,i)*j;
 			}
 		}
+		resTemp[0][curInd++] = hInertia;
+		
+		// Rows with holes
+		int nRowsHoles = 0;
+		for(int i = 0; i < State.ROWS; i++) {
+			SimpleMatrix row = board.extractVector(true, i);
+			if(row.elementSum() != State.COLS) {
+				nRowsHoles++;
+			}
+		}
+		resTemp[0][curInd++] = nRowsHoles;
+		
+		// Hole depth/number of overhanging full cells
+		int nOverhang = 0;
+		for(int j = 0; j < State.COLS; j++) {
+			SimpleMatrix col = board.extractVector(false, j);
+			
+			if(colHoles[j] != 0) {
+				int nHolesSeen = 0;
+				for(int i = 0; i < colHeight[j]; i++) {
+					if(col.get(i) == 0) {  // i.e., in a hole
+						nHolesSeen++;
+						nOverhang += (colHeight[j] - i) - (colHoles[j] - nHolesSeen);
+					}
+				}
+			}
+		}
+		resTemp[0][curInd++] = nOverhang;
+
 		
 		// Number of filled spaces in top four rows
 //		SimpleMatrix topFourRows = board.extractMatrix(State.ROWS - 4, State.ROWS, 0, State.COLS);
@@ -157,15 +198,20 @@ public class BoardFeature implements Feature {
 		
 		// Number of filled spaces in all rows
 		double numFilled = board.elementSum();
+		resTemp[0][curInd++] = numFilled;
 		
 		// Return the features.  Can change which features are used by 
 		// changing assignments to resTemp and nFeatures above
 		
-		double[] indivFeatures =  {maxH, numFlips, nHoles, 
-			nEmptyBelow, avgH, hInertia, maxRow, erodedRows, numFilled};
-		System.arraycopy(indivFeatures, 0, resTemp[0], curInd, indivFeatures.length);
+		//double[] indivFeatures =  {maxH, numFlips, nHoles, 
+		//	nEmptyBelow, avgH, hInertia, maxRow, erodedRows, numFilled};
+		//System.arraycopy(indivFeatures, 0, resTemp[0], curInd, indivFeatures.length);
+		
 		SimpleMatrix res = new SimpleMatrix(resTemp);
 		res = res.transpose();
+		
+		long endTime = System.nanoTime();
+		//System.out.println("Feature calculation took " + ((endTime - startTime) / 1000000) + "ms");
 
 		return res;
     }

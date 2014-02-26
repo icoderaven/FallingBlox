@@ -8,6 +8,7 @@ public class Main {
 	public static void main(String[] args) {
 		State sFinal = runGraphics();
 		//State sFinal = recordVideo();
+		//State sFinal = run();
 		System.out.println("You have completed "+sFinal.getRowsCleared()+" rows.");
 	}
 	
