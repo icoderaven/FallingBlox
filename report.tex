@@ -39,7 +39,7 @@ We implemented a variant general Policy Gradient Theorem inspired by the REINFOR
 %\STATE  $\nabla_{\theta}J \gets \frac{1}{N}\underset{i=1}{\overset{N}{\sum}}\left[\sum\limits_{t=0}^{T-1}\nabla_{\theta}\log\pi\left(a_{t}^{i}|s_{t}^{i}\right) \sum\limits_{t}^{T-1} r_t\right]$\\
 %\STATE $\theta_{new} \gets \theta_{old}+\alpha\nabla_{\theta}J$
 \STATE $z_{t+1} \gets \gamma z_t + \nabla_{\theta}\log\pi\left(a_{t}^{i}|s_{t}^{i} \right)$
-\STATE $\Delta_{t+1} \gets \Delta_t + \frac{1}{t+1} \left( z_{t+1} r_t - \Delta_t\right)$
+\STATE $\Delta_{t+1} \gets \Delta_t + \frac{1}{t+1} \left( z_{t+1} \sum_{\tau = t+1}^{T}{r_\tau} - \Delta_t\right)$
 \ENDFOR
 \STATE $\delta(j) \gets \Delta_T$
 \ENDFOR
