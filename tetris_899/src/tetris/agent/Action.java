@@ -22,5 +22,11 @@ public class Action {
 		public void apply(State state) {
 			state.makeMove(index);
 		}
+		
+		public boolean is_fatal(State state) {
+			State copyState = new State(state);
+			apply(copyState);
+			return copyState.hasLost();
+		}
 
 }

@@ -50,7 +50,7 @@ public class TrajectoryGenerationPool {
 				Trajectory traj = taskService.take().get();
 				rewardSum += traj.sum_rewards_tail(0, 1.0);
 				lengthSum += traj.tuples.size();
-				System.out.format("Completed task %d with reward %f and length %d%n", i, traj.sum_rewards_tail(0,  1.0), traj.tuples.size());
+//				System.out.format("Completed task %d with reward %f and length %d%n", i, traj.sum_rewards_tail(0,  1.0), traj.tuples.size());
 				trajectories[i] = traj;
 				//double tick = System.currentTimeMillis();
 				//System.out.format("Completed task %d/%d, Average rate %f%n", 
