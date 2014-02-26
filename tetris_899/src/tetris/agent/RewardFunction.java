@@ -1,4 +1,6 @@
 package tetris.agent;
+import org.ejml.simple.SimpleMatrix;
+
 import tetris.simulator.State;
 
 /** Classes implementing this interface calculate rewards from state-action pairs.
@@ -30,6 +32,16 @@ public abstract class RewardFunction {
 	
 	// Make a deep copy of this object
 	public abstract RewardFunction copy();
+	
+	// Sort of?
+	public double estimate_value(State state, Policy policy) {
+		double sum = 0.0;
+		SimpleMatrix probs = policy.pi(state);
+		for(int a_prime = 0; a_prime < probs.numRows(); a_prime++) {
+			sum += probs.get(a_prime)*get_reward(state, new Action(a_prime));
+		}
+		return sum;
+	}
 	
 	/** 
 	 * Calculate the scaled reward associated with a state-action pair.

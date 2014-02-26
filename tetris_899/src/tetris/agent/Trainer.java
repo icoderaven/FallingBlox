@@ -17,7 +17,7 @@ public class Trainer {
 
 	public static void main(String[] args) {
 		
-		int trajectoryBatchSize = 20;
+		int trajectoryBatchSize = 40;
 		int updateBatchSize = 1;
 		int updateIterationCounter = 0;
 		int maxTrajectoryLength = 1000;
@@ -43,29 +43,27 @@ public class Trainer {
 
 		State startState = new State();
 		
-		TrajectoryGenerationPool trajMachine = new TrajectoryGenerationPool(8);
+		TrajectoryGenerationPool trajMachine = new TrajectoryGenerationPool(8); // # threads
 
-//		RandomPolicy trainerPi = new RandomPolicy();
-//		StateGenerator stateGen = new PolicyStateGenerator(trainerPi, startState, trainerSteps);
+		StateGenerator stateGen = new FixedStateGenerator(startState);
+		RewardFunction func1 = new LinesClearedReward(10.0);
+		RewardFunction func2 = new TurnsAliveReward(1.0);
+		RewardFunction func3 = new DeathReward(-100); // Penalty of -100 for dieing
+		RewardFunction comp1 = new CompositeReward(func1, func2);
+		RewardFunction rewardFunc = new CompositeReward(comp1, func3);
 		
-//		TrajectoryGenerator trajGen = new FixedLengthTrajectoryGenerator(
-//				stateGen, pi, rewardFunc, maxTrajectoryLength);
-
 		try {
 			while (true) {
-				for(int i = 0; i < updateBatchSize; i++) {
-					
-					StateGenerator stateGen = new FixedStateGenerator(startState);
-					RewardFunction func1 = new LinesClearedReward(10.0);
-					RewardFunction func2 = new TurnsAliveReward(0.1);
-					RewardFunction func3 = new DeathReward(-1); // Penalty of -1000 for dieing
-					RewardFunction comp1 = new CompositeReward(func1, func2);
-					RewardFunction rewardFunc = new CompositeReward(comp1, func3);
-					TrajectoryGenerator trajGen = new FixedLengthTrajectoryGenerator(stateGen, pi, rewardFunc, maxTrajectoryLength);
-					
-					Trajectory[] trajectories = trajMachine.generate_trajectories(trajGen, trajectoryBatchSize);
-					pi.fit_policy(trajectories);
+				
+				TrajectoryGenerator trajGen = new FixedLengthTrajectoryGenerator(stateGen, pi, rewardFunc, maxTrajectoryLength);
+				Trajectory[] trajectories = trajMachine.generate_trajectories(trajGen, trajectoryBatchSize);
+				
+				double step_size = 0.1; // For now...
+				
+				for(int i = 0; i < updateBatchSize; i++) {	
+					pi.fit_policy(trajectories, step_size);
 				}
+				
 				SimpleMatrix parameters = pi.get_params();
 				
 				parameters.transpose().print();
@@ -73,6 +71,7 @@ public class Trainer {
 			
 				System.out.format("Ran %d iterations so far.%n", updateIterationCounter);
 				updateIterationCounter++;
+				
 			}
 		} catch(Exception e) {
 			e.printStackTrace();

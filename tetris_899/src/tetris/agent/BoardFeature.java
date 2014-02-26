@@ -14,7 +14,7 @@ import java.util.*;
 
 public class BoardFeature implements Feature {
 		
-	public int nFeatures = 8 + State.COLS - 1;// + 2*State.COLS + State.ROWS;
+	public int nFeatures = 9 + 2*State.COLS - 1;
 	
     public SimpleMatrix get_feature_vector(State temp_s, Action a)
     {    
@@ -123,9 +123,9 @@ public class BoardFeature implements Feature {
 		}
 		
 		// Column Heights
-//		for(int i = 0; i < State.COLS; i++) {
-//			resTemp[0][curInd++] = colHeight[i];
-//		}
+		for(int i = 0; i < State.COLS; i++) {
+			resTemp[0][curInd++] = colHeight[i];
+		}
 		
 		// Landing height of last piece
 		// Not sure how to quickly calculate this
@@ -152,19 +152,21 @@ public class BoardFeature implements Feature {
 		}
 		
 		// Number of filled spaces in top four rows
-		SimpleMatrix topFourRows = board.extractMatrix(State.ROWS - 4, State.ROWS, 0, State.COLS);
-		double topRows = topFourRows.elementSum();
+//		SimpleMatrix topFourRows = board.extractMatrix(State.ROWS - 4, State.ROWS, 0, State.COLS);
+//		double topRows = topFourRows.elementSum();
+		
+		// Number of filled spaces in all rows
+		double numFilled = board.elementSum();
 		
 		// Return the features.  Can change which features are used by 
 		// changing assignments to resTemp and nFeatures above
 		
 		double[] indivFeatures =  {maxH, numFlips, nHoles, 
-			nEmptyBelow, avgH, hInertia, maxRow, erodedRows};
+			nEmptyBelow, avgH, hInertia, maxRow, erodedRows, numFilled};
 		System.arraycopy(indivFeatures, 0, resTemp[0], curInd, indivFeatures.length);
 		SimpleMatrix res = new SimpleMatrix(resTemp);
 		res = res.transpose();
-//		res.transpose().print();
-//		System.out.format("Holes sq: %f%n", nHoles);
+
 		return res;
     }
 

@@ -49,7 +49,7 @@ public class Main {
 	//runs and displays the tetris game until the game is over and returns the final state
 	public static State runGraphics()
 	{
-		int delay = 1;
+		int delay = 1000;
 		
 		State s = new State();
 		Visualizer v = new Visualizer(s);
