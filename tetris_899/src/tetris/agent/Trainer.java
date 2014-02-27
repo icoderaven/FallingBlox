@@ -67,9 +67,6 @@ public class Trainer {
 		double startGamma = 0.99;
 		double gammaConstant = -0.01; // 30 iterations to decay to gamma = 0.95
 		pi.set_gamma(startGamma);
-		Vector<Double> last_reward = new Vector<Double>();
-		Vector<Trajectory> good_trajs = new Vector<Trajectory>();
-		double good_reward_avg = 0;
 		try {
 			while (true) {
 				for (int i = 0; i < updateBatchSize; i++) {
@@ -81,53 +78,7 @@ public class Trainer {
 
 					// pi.fit_policy(trajectories,
 					// startStepSize/(updateIterationCounter+1));
-					double max = 0.0;
-					int index = 0;
-					double avg_rewards = 0.0;
-					for (int k = 0; k < trajectories.length; k++) {
-						double temp = trajectories[k].sum_rewards_tail(0, 1.0);
-						avg_rewards += temp;
-						if (temp > max) {
-							index = k;
-							max = temp;
-						}
-					}
-					avg_rewards = avg_rewards / trajectories.length;
-
-					if (max > 2 * avg_rewards) {
-						good_trajs.add(trajectories[index]);
-						System.out.format("%nAdding traj with reward %f", max);
-						good_reward_avg = (good_reward_avg
-								* (last_reward.size()) + max)
-								/ (last_reward.size() + 1);
-						last_reward.add(max);
-
-						// prune
-						double min = last_reward.get(0);
-						int min_index = 0;
-						for (int q = 0; q < last_reward.size(); q++) {
-							if (last_reward.get(q) < 2*avg_rewards) {
-								good_trajs.remove(q);
-								last_reward.remove(q);
-								good_reward_avg = 0;
-								for (int p = 0; p < last_reward.size(); p++) {
-									good_reward_avg += last_reward.get(p);
-								}
-								good_reward_avg /= last_reward.size();
-								System.out.println("Popped!");
-							}
-						}
-
-					}
-					Vector<Trajectory> to_fit_trajs = new Vector<Trajectory>(
-							good_trajs.size() + trajectories.length);
-					for (int k = 0; k < trajectories.length; k++) {
-						to_fit_trajs.addElement(trajectories[k]);
-					}
-//					to_fit_trajs.addAll(good_trajs);
-					System.out.println(to_fit_trajs.size());
-					pi.fit_policy((Trajectory[]) to_fit_trajs
-							.toArray(new Trajectory[to_fit_trajs.size()]), 0.1);
+					pi.fit_policy(trajectories, 0.1);
 					stateGen = new PolicyStateGenerator(pi, startState,
 							(int) Math.random() * trainerSteps);
 				}
