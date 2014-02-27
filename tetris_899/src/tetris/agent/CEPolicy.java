@@ -20,7 +20,7 @@ public class CEPolicy implements Policy {
 	
 	public CEPolicy() {
 		_feature = new AbbeelFeature();
-		//_feature = new CEFeature();
+//		_feature = new CEFeature();
 		//_feature = new BoardFeature();
 		//_feature = new DefaultFeature();
 		_params = new SimpleMatrix(_feature.get_feature_dimension(),1);
@@ -33,7 +33,8 @@ public class CEPolicy implements Policy {
 		if(_useMultivar) {
 			_gaussSigma = SimpleMatrix.identity(_feature.get_feature_dimension());
 		} else {
-			_gaussSigma = new SimpleMatrix(_gaussMu);
+			_gaussSigma = new SimpleMatrix(_feature.get_feature_dimension(), 1);
+			_gaussSigma.set(1.0);
 		}
 		
 		_gamma = 0.95;
@@ -105,6 +106,7 @@ public class CEPolicy implements Policy {
 	public SimpleMatrix sampleParams() {
 		// Take a sample from the current Gaussian
 		int n = _feature.get_feature_dimension();
+		SimpleMatrix sample = new SimpleMatrix(n, 1);
 		
 		if(_useMultivar) {
 			double[] tempMu = new double[n];
@@ -121,19 +123,18 @@ public class CEPolicy implements Policy {
 			MultivariateNormalDistribution dist = new MultivariateNormalDistribution(tempMu, tempSigma);
 			double[][] temp = new double[1][n]; 
 			temp[0] = dist.sample();
-			SimpleMatrix sample = new SimpleMatrix(temp);
+			sample = new SimpleMatrix(temp);
 			
-			return sample.transpose();
+			sample = sample.transpose();
 		} else {
-			SimpleMatrix sample = new SimpleMatrix(n, 1);
 			Random rng = new Random();	
 			for(int i = 0; i < n; i++) {
 				double temp = rng.nextGaussian() * _gaussSigma.get(i) + _gaussMu.get(i);
 				sample.set(i, temp);
 			}
-			
-			return sample;
 		}
+		
+		return sample; //sample.divide(sample.elementSum());
 	}
 	
 	public SimpleMatrix getMu() {
@@ -379,7 +380,7 @@ public class CEPolicy implements Policy {
 			return Double.NEGATIVE_INFINITY;
 		}
 		
-		return params.dot(temp); // should normalize?
+		return params.dot(temp);  // should normalize?
 	}
 	
 }
