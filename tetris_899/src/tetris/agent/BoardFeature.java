@@ -14,7 +14,7 @@ import java.util.*;
 
 public class BoardFeature implements Feature {
 		
-	public int nFeatures = 13 + 2*State.COLS - 1-2;
+	public int nFeatures = 2*State.COLS+11;
 	
     public SimpleMatrix get_feature_vector(State prev_s, Action a)
     {    
@@ -153,7 +153,7 @@ public class BoardFeature implements Feature {
 				prevBlock = nextBlock;
 			}
 		}
-//		resTemp[0][curInd++] = numFlips;
+		resTemp[0][curInd++] = numFlips;
 		
 		// Height inertia
 		double hInertia = 0;

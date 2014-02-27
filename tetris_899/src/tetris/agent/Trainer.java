@@ -32,7 +32,7 @@ public class Trainer {
 		GradientPolicy pi;
 		try {
 			SimpleMatrix paramMatrix = SimpleMatrix.loadCSV(logname);
-			Feature feat = new BoardFeature();
+			Feature feat = new AbbeelFeature();
 			pi = new GradientPolicy(feat, paramMatrix);
 			System.out.println("Param log loaded.");
 		} catch (Exception e) {
@@ -127,7 +127,7 @@ public class Trainer {
 //					to_fit_trajs.addAll(good_trajs);
 					System.out.println(to_fit_trajs.size());
 					pi.fit_policy((Trajectory[]) to_fit_trajs
-							.toArray(new Trajectory[to_fit_trajs.size()]), 1.0);
+							.toArray(new Trajectory[to_fit_trajs.size()]), 0.1);
 					stateGen = new PolicyStateGenerator(pi, startState,
 							(int) Math.random() * trainerSteps);
 				}

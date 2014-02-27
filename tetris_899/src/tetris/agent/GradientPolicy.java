@@ -18,7 +18,7 @@ public class GradientPolicy implements Policy {
 	
 	public GradientPolicy()
 	{
-		_feature = new BoardFeature();
+		_feature = new AbbeelFeature();
 		//_feature = new DefaultFeature();
 		_params = new SimpleMatrix(_feature.get_feature_dimension(),1);
 		_params.set(0.0);
@@ -187,20 +187,21 @@ public class GradientPolicy implements Policy {
 		SimpleMatrix gradSum = new SimpleMatrix(_params.numRows(), 1);
 		SimpleMatrix trajGradSum = new SimpleMatrix(_params.numRows(), 1);
 		SimpleMatrix eligibility_sum = new SimpleMatrix(_params.numRows(), 1);
+		SimpleMatrix reward_sum = new SimpleMatrix(1, 1);
 		SimpleMatrix gradCovs = new SimpleMatrix(_params.numRows(), _params.numRows());
 		SimpleMatrix fisher_sum = new SimpleMatrix(_params.numRows(), _params.numRows());
 		SimpleMatrix grad_est_sum = new SimpleMatrix(_params.numRows(), 1);
 		gradCovs.set(0);
 		double gamma=0.99;
 		// Calculate optimal baselines
-		SimpleMatrix baselines = calculate_baselines(t_list);
+//		SimpleMatrix baselines = calculate_baselines(t_list);
 		
 //		baselines.transpose().print();
 		
 		int contrib = 0;
 		for(int i=0; i<t_list.length; i++)
 		{
-			trajGradSum.set(0);
+			trajGradSum.set(1E-3);
 			
 			double discount = 1.0;
 			for(int j=0; j < t_list[i].tuples.size(); j++)
@@ -255,8 +256,11 @@ public class GradientPolicy implements Policy {
 			SimpleMatrix discountedReward = new SimpleMatrix(_params.numRows(), 1);
 			discountedReward.set(t_list[i].sum_rewards_tail(0, gamma));
 			fisher_sum = fisher_sum.plus(trajGradSum.mult(trajGradSum.transpose()));
-			grad_est_sum = grad_est_sum.plus(trajGradSum.elementMult(discountedReward.minus(baselines)) );
+			grad_est_sum = grad_est_sum.plus(trajGradSum.elementMult(discountedReward) );
 			eligibility_sum = eligibility_sum.plus(trajGradSum);
+			SimpleMatrix r = new SimpleMatrix(1,1);
+			r.set((t_list[i].sum_rewards_tail(0, gamma)) );
+			reward_sum = reward_sum.plus(r);
 
 		}
 //		
@@ -275,13 +279,23 @@ public class GradientPolicy implements Policy {
 //		
 //		// Scale delta by info matrix
 //		SimpleMatrix grad = gradInfo.mult(gradSum);
+		SimpleMatrix fisher = fisher_sum.scale(1.0/t_list.length);
+		SimpleMatrix fisher_inv = fisher.pseudoInverse();
 		SimpleMatrix grad = grad_est_sum.scale(1.0/t_list.length);
+		SimpleMatrix eligibility = eligibility_sum.scale(1.0/t_list.length);
+		SimpleMatrix avg_reward = reward_sum.scale(1.0/t_list.length);
 		
+		SimpleMatrix tbi = fisher_sum.minus( (eligibility.mult(eligibility.transpose()))  );
+		SimpleMatrix Q = (SimpleMatrix.identity(1).plus( eligibility.transpose().mult( tbi.pseudoInverse() ).mult(eligibility)) ).scale(1.0/t_list.length);
+		
+		SimpleMatrix baseline = Q.mult(avg_reward.minus( eligibility.transpose().mult(fisher_inv.mult(grad) )) );
+		
+		SimpleMatrix natural_grad = fisher_inv.mult(grad.minus(eligibility.mult(baseline)) );
 		//Step params in this direction
 		double step = step_size;
-		_params = _params.plus(step, grad);
+		_params = _params.plus(step, natural_grad);
 		
-		System.out.format("Step size: %f%n", Math.sqrt(grad.normF()) );
+		System.out.format("Step size: %f%n", Math.sqrt(natural_grad.normF()) );
 	}
 
 	@Override
