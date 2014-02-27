@@ -23,7 +23,7 @@ public class Trainer {
 		int updateBatchSize = 1; // # steps to run before decreasing step size,
 									// temp, gamma, etc.
 		int updateIterationCounter = 0;
-		int maxTrajectoryLength = 1000;
+		int maxTrajectoryLength = 100000;
 		int trainerSteps = 1;
 
 		// File to store to
