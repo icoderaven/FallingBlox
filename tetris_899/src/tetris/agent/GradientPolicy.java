@@ -15,6 +15,7 @@ public class GradientPolicy implements Policy {
 	private SimpleMatrix _params;
 	private double _temperature;
 	private double _gamma;
+	private double _beta;
 	
 	public GradientPolicy()
 	{
@@ -23,16 +24,18 @@ public class GradientPolicy implements Policy {
 		_params = new SimpleMatrix(_feature.get_feature_dimension(),1);
 		_params.set(0.0);
 	
-		_temperature = 100.0;
-		_gamma = 0.1;
+		_temperature = 1.0;
+		_gamma = 0.95;
+		_beta = 0.01;
 
 	}
 
 	public GradientPolicy(Feature featureGenerator, SimpleMatrix parameters) {
 		_feature = featureGenerator;
 		_params = parameters;
-		_temperature = 100.0;
-		_gamma = 0.1;
+		_temperature = 1.0;
+		_gamma = 0.95;
+		_beta = 0.01;
 	}
 	
 	public GradientPolicy(GradientPolicy other) {
@@ -40,6 +43,7 @@ public class GradientPolicy implements Policy {
 		_params = new SimpleMatrix(other._params);
 		_temperature = other._temperature;
 		_gamma = other._gamma;
+		_beta = other._beta;
 	}
 	
 	public SimpleMatrix get_params() {
@@ -181,9 +185,6 @@ public class GradientPolicy implements Policy {
 //	}
 	
 	public void fit_policy(Trajectory[] t_list, double step_size) {
-		//TODO Average gradient over trajectories
-		//Create a container for all the evaluated deltas
-		
 		SimpleMatrix gradSum = new SimpleMatrix(_params.numRows(), 1);
 		SimpleMatrix trajGradSum = new SimpleMatrix(_params.numRows(), 1);
 		SimpleMatrix gradCovs = new SimpleMatrix(_params.numRows(), _params.numRows());
@@ -192,7 +193,6 @@ public class GradientPolicy implements Policy {
 		
 		// Calculate optimal baselines
 //		SimpleMatrix baselines = calculate_baselines(t_list);
-		
 //		baselines.transpose().print();
 		
 		int contrib = 0;
@@ -272,6 +272,7 @@ public class GradientPolicy implements Policy {
 		//Step params in this direction
 		double step = step_size;
 		_params = _params.plus(step, grad);
+//		normalize_params();
 		
 		System.out.format("Step size: %f%n", Math.sqrt(grad.normF()) );
 	}
@@ -287,78 +288,73 @@ public class GradientPolicy implements Policy {
 		
 		/// For current piece get all possible actions
 		int[][] moves = s.legalMoves();
+		boolean[] isFatal = new boolean[moves.length]; 
 		SimpleMatrix exponents = new SimpleMatrix(moves.length, 1);
 		SimpleMatrix probs = new SimpleMatrix(moves.length, 1);
 
 		// Get all exponents first
 		double maxVal = Double.NEGATIVE_INFINITY;
 		for (int a_prime = 0; a_prime < moves.length; a_prime++) {
+			
 			double logLikelihood = calculate_log_likelihood(s, new Action(a_prime));
+			isFatal[a_prime] = logLikelihood == Double.NEGATIVE_INFINITY;
+				
 			if(logLikelihood > maxVal) {
 				maxVal = logLikelihood;
 			}
 			exponents.set(a_prime, logLikelihood);
 		}
 		
-		// If all moves are fatal, we won't have a maxVal to normalize the exponents with
+		// If all moves are fatal, return uniform
 		if(maxVal == Double.NEGATIVE_INFINITY) {
-			maxVal = 0;
+			probs.set(1.0);
+			return probs.scale( 1.0/probs.elementSum() );
 		}
-//		double filteredMean = 0.0;
-//		int meanCounter = 0;
-//		for (int a_prime = 0; a_prime < moves.length; a_prime++) {
-//			double logLikelihood = calculate_log_likelihood(s, new Action(a_prime));
-//			if(logLikelihood > -10) {
-//				filteredMean += logLikelihood;
-//				meanCounter++;
-//			}
-//			exponents.set(a_prime, logLikelihood);
-//		}
-//		filteredMean = filteredMean/meanCounter;
 		
-		double z = 0;
+		// Calculate probabilities and track sum
 		for (int a_prime = 0; a_prime < moves.length; a_prime++) {
 			double normalizedExponent = exponents.get(a_prime) - maxVal;
 			double likelihood = Math.exp(normalizedExponent);
-			z += likelihood;
 			probs.set(a_prime, likelihood);
 		}
 		
-		// Catch instances where exponent underflows and returns all 0
-		if(z == 0) {
-			probs.set(1.0);
-			z = probs.numRows();
-		}
-		
 		// Normalize
-		probs = probs.divide(z);
+		probs = probs.divide( probs.elementSum() );
 		
 		// Additive exploration (epsilon-exploration)
-		double beta = 0.01; // Chance of random action
-//		
 		SimpleMatrix smoother = new SimpleMatrix(moves.length, 1);
 		for (int a_prime = 0; a_prime < moves.length; a_prime++) {
-			if(probs.get(a_prime) > 0.0) {
+			if(!isFatal[a_prime]) {
 				smoother.set(a_prime, 1.0);
 			}
 		}
-		smoother = smoother.scale( beta/smoother.elementSum() );
-	
-		probs = probs.scale(1.0 - beta);
+		smoother = smoother.scale( _beta/smoother.elementSum() );
+		probs = probs.scale(1.0 - _beta);
 		probs = probs.plus(smoother);
 		probs = probs.divide( probs.elementSum() ); // Should be normalized, but just in case
+		
+//		System.out.println("PDF:");
+//		probs.transpose().print();
+//		
+//		System.out.println("Exponents:");
+//		exponents.transpose().print();
+		
+		if(probs.hasUncountable()) {
+			System.out.println("NaN PDF!");
+		}
 		
 		return probs;
 	}
 
 	protected double calculate_log_likelihood(State s, Action a) {
 		
-		// Negative moves should have 0 probability
-		if(a.is_fatal(s)) {
+		SimpleMatrix temp = _feature.get_feature_vector(s,a);
+
+		// Fatal moves should have 0 probability
+		if(temp == null) {
 			return Double.NEGATIVE_INFINITY;
 		}
 		
-		SimpleMatrix temp = _feature.get_feature_vector(s,a);
 		return _params.dot(temp)/_temperature;
 	}
 	
@@ -382,27 +378,48 @@ public class GradientPolicy implements Policy {
 		return _gamma;
 	}
 	
+	public void set_beta(double bet) {
+		_beta = bet;
+	}
+	
+	public double get_beta() {
+		return _beta;
+	}
+	
 	@Override
 	public SimpleMatrix gradient(State s, Action a) {
 		SimpleMatrix J_for_a = _feature.get_feature_vector(s, a);
 		SimpleMatrix pi_for_s = pi(s);
 		
-		if(pi_for_s.hasUncountable()) {
-			System.out.println("NaN PMF!");
-			 pi_for_s = pi(s);
+		// If a is a fatal move, we return zero gradient
+		if( J_for_a == null) {
+			SimpleMatrix ret = new SimpleMatrix( _params.numRows(), 1 );
+			ret.set( 0 );
+			return ret;
 		}
 		
 		//Each feature vector gets one column
-		SimpleMatrix all_features = new SimpleMatrix(J_for_a.numRows(),pi_for_s.numRows());
-		
-		for (int a_prime = 0; a_prime < pi_for_s.numRows(); a_prime++) {
+		SimpleMatrix all_features = new SimpleMatrix(J_for_a.numRows(), pi_for_s.numRows());
+		all_features.set(0);
+		for( int a_prime = 0; a_prime < pi_for_s.numRows(); a_prime++ ) {
+			SimpleMatrix feat = _feature.get_feature_vector(s, new Action(a_prime));
+			if( feat == null ) {
+				continue;
+			}
 			//Insert the feature vector into the specified column
-			all_features.insertIntoThis(0, a_prime, _feature.get_feature_vector(s, new Action(a_prime)) );
+			all_features.insertIntoThis( 0, a_prime, feat );
 		}
 		
 		SimpleMatrix E_for_s = all_features.mult(pi_for_s);				
-		SimpleMatrix feat = J_for_a.minus(E_for_s);
-		return feat;
+		SimpleMatrix grad = J_for_a.minus(E_for_s);
+		return grad;
+	}
+	
+	private void normalize_params() {
+		double mean = _params.elementSum()/_params.numRows();
+		SimpleMatrix shift = new SimpleMatrix( _params.numRows(), 1 );
+		shift.set(mean);
+		_params = _params.minus( shift );
 	}
 	
 	@Override

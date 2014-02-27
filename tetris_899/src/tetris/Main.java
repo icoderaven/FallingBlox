@@ -15,7 +15,7 @@ public class Main {
 	//run the tetris game and save image of the board at each turn, returns the final state
 	public static State recordVideo()
 	{
-		int delay = 500;
+		int delay = 1;
 		
 		State s = new State();
 		Visualizer v = new Visualizer(s);
@@ -50,7 +50,7 @@ public class Main {
 	//runs and displays the tetris game until the game is over and returns the final state
 	public static State runGraphics()
 	{
-		int delay = 1000;
+		int delay = 500;
 		
 		State s = new State();
 		Visualizer v = new Visualizer(s);

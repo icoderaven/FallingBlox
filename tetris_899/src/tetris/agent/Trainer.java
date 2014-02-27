@@ -17,18 +17,20 @@ public class Trainer {
 
 	public static void main(String[] args) {
 		
-		int trajectoryBatchSize = 64; // 2 x num parameters
-		int updateBatchSize = 1; // # steps to run before decreasing step size, temp, gamma, etc.
+		int trajectoryBatchSize = 20; // 2 x num parameters
+		int updateBatchSize = 10; // # steps to run before decreasing step size, temp, gamma, etc.
 		int updateIterationCounter = 0;
 		int maxTrajectoryLength = 1000;
-		int trainerSteps = 3;
+		int trainerSteps = 0;
 		
 		
 		// File to store to
 		String logname = "params.txt";
+		String metalogname = "metaparams.txt";
 		
+		// Load the policy
 		GradientPolicy pi;
-		 try {
+		try {
 			SimpleMatrix paramMatrix = SimpleMatrix.loadCSV(logname);
 			Feature feat = new BoardFeature();
 			pi = new GradientPolicy(feat, paramMatrix);
@@ -37,20 +39,30 @@ public class Trainer {
 			 System.out.println("No param log found. Creating new policy.");
 			 pi = new GradientPolicy();
 		 }
+		 
+		// Load the metaparameters
+		SimpleMatrix metaparams;
+		 try {
+				metaparams = SimpleMatrix.loadCSV(metalogname);
+				System.out.format("Metaparameter log loaded. Starting from iteration %f%n", metaparams.get(1));
+			 } catch(Exception e) {
+				 System.out.println("No metaparam log found. Starting new trainer.");
+				 metaparams = new SimpleMatrix(1,1);
+			 }
 		
 		SimpleMatrix pars = pi.get_params();
 		pars.transpose().print();
 
 		State startState = new State();
 		
-		TrajectoryGenerationPool trajMachine = new TrajectoryGenerationPool(8); // # threads
+		TrajectoryGenerationPool trajMachine = new TrajectoryGenerationPool(1); // # threads
 
 //		StateGenerator stateGen = new FixedStateGenerator(startState);
 		Policy trainerPi = new RandomPolicy();
 		StateGenerator stateGen = new PolicyStateGenerator(trainerPi, startState, trainerSteps);
 		RewardFunction func1 = new LinesClearedReward(1.0);
-		RewardFunction func2 = new TurnsAliveReward(0.1);
-		RewardFunction func3 = new DeathReward(-10); // Penalty of -100 for dieing
+		RewardFunction func2 = new TurnsAliveReward(0.0);
+		RewardFunction func3 = new DeathReward(-10.0); // Penalty of -100 for dieing
 		RewardFunction comp1 = new CompositeReward(func1, func2);
 		RewardFunction rewardFunc = new CompositeReward(comp1, func3);
 		
@@ -58,10 +70,15 @@ public class Trainer {
 		pi.set_temperature(startTemp);
 		
 		double startStepSize = 1.0;
+		double stepSize = startStepSize;
 		
 		double startGamma = 0.99;
 		double gammaConstant = -0.01; // 30 iterations to decay to gamma = 0.95
 		pi.set_gamma(startGamma);
+		
+		double startBeta = 0.01; // % of random non-fatal moves
+		double betaConstant = -0.01;
+		pi.set_beta(startBeta);
 		
 		try {
 			while (true) {
@@ -69,24 +86,35 @@ public class Trainer {
 					TrajectoryGenerator trajGen = new FixedLengthTrajectoryGenerator(stateGen, pi, rewardFunc, maxTrajectoryLength);
 					Trajectory[] trajectories = trajMachine.generate_trajectories(trajGen, trajectoryBatchSize);
 					
-//					pi.fit_policy(trajectories, startStepSize/(updateIterationCounter+1));
-					pi.fit_policy(trajectories, 1.0);
+					pi.fit_policy(trajectories, stepSize);
+//					pi.fit_policy(trajectories, 1.0);
 				}
+				updateIterationCounter++;
 				
 				SimpleMatrix parameters = pi.get_params();
 				
 				parameters.transpose().print();
 				parameters.saveToFileCSV(logname);
 			
-				updateIterationCounter++;
+				metaparams.set(0, (double) updateIterationCounter);
+				metaparams.saveToFileCSV(metalogname);
 				
-				// Reduce temperature at each step
-//				pi.set_temperature(startTemp/updateIterationCounter);
-//				double nextGamma = (1.0 - startGamma*Math.exp(updateIterationCounter*gammaConstant));
+				// Reduce step size gradually according to 1/i
+				stepSize = startStepSize/updateIterationCounter;
+				
+				// Reduce randomness with various parameters at each step
+				double nextTemperature = startTemp/updateIterationCounter;
+//				pi.set_temperature(nextTemperature);
+				
+				double nextGamma = (1.0 - startGamma*Math.exp(updateIterationCounter*gammaConstant));
 //				pi.set_gamma( nextGamma );
 				
-//				System.out.format("Ran %d iterations so far. Gamma: %f%n", updateIterationCounter, nextGamma);
-				System.out.format("Ran %d iterations so far.%n", updateIterationCounter);
+				double nextBeta = startBeta*Math.exp(updateIterationCounter*betaConstant);
+//				pi.set_beta( nextBeta );
+				
+				System.out.format("Ran %d iterations so far. Step Size: %f, Temp: %f, Gamma: %f, Beta:%f%n", 
+				updateIterationCounter, stepSize, nextTemperature, nextGamma, nextBeta);
+//				System.out.format("Ran %d iterations so far.%n", updateIterationCounter);
 			}
 		} catch(Exception e) {
 			e.printStackTrace();

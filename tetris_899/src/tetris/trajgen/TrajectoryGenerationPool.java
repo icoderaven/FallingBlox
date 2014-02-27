@@ -44,12 +44,14 @@ public class TrajectoryGenerationPool {
 		// Record the results as they are done
 		double startTime = System.currentTimeMillis();
 		double rewardSum = 0;
+		int rowsSum = 0;
 		int lengthSum = 0;
 		for(int i = 0; i < numTrajectories; i++) {
 			try {
 				Trajectory traj = taskService.take().get();
 				rewardSum += traj.sum_rewards_tail(0, 1.0);
 				lengthSum += traj.tuples.size();
+				rowsSum += traj.tuples.get(traj.tuples.size() - 1).state.getRowsCleared();
 //				System.out.format("Completed task %d with reward %f and length %d%n", i, traj.sum_rewards_tail(0,  1.0), traj.tuples.size());
 				trajectories[i] = traj;
 				//double tick = System.currentTimeMillis();
@@ -67,10 +69,10 @@ public class TrajectoryGenerationPool {
 		}
 		
 		double tick = System.currentTimeMillis();
-		System.out.format("Completed all task (%d/%d) at rate %f Hz with average reward %f"
-				+ " and average length %f.%n", 
+		System.out.format( "Completed all task (%d/%d) at rate %f Hz with average reward %f"
+				+ " average length %f and average rows %f.%n", 
 				numTrajectories, numTrajectories, 1000*(numTrajectories)/(tick - startTime),
-				rewardSum/numTrajectories, 1.0*lengthSum/numTrajectories);
+				rewardSum/numTrajectories, 1.0*lengthSum/numTrajectories, rowsSum/(1.0*numTrajectories) );
 		return trajectories;
 		
 	}

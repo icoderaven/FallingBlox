@@ -16,7 +16,11 @@ public class Agent {
 			SimpleMatrix paramMatrix = SimpleMatrix.loadCSV(logname);
 			Feature feat = new BoardFeature();
 			pi = new GradientPolicy(feat, paramMatrix);
+			pi.set_gamma(0.95);
+			pi.set_temperature(1.0); // No smoothing from temp
+			pi.set_beta(0.0); // No random exploration at test time
 			System.out.println("Param log loaded.");
+			paramMatrix.transpose().print();
 		 } catch(Exception e) {
 			 System.out.println("No param log found. Creating new policy.");
 		 }
@@ -34,7 +38,7 @@ public class Agent {
 		
 		Action a = pi.get_action(s);
 		int move = a.index;
-		
+
 		SimpleMatrix pdf = pi.pi(s);
 		System.out.println("PDF:");
 		pdf.transpose().print();

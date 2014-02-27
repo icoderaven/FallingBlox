@@ -14,7 +14,9 @@ import java.util.*;
 
 public class BoardFeature implements Feature {
 		
-	public int nFeatures = 13 + 2*State.COLS - 1;
+//	public int nFeatures = 13 + 2*State.COLS - 1;
+//	public int nFeatures = 9;
+	public int nFeatures = 4;
 	
     public SimpleMatrix get_feature_vector(State prev_s, Action a)
     {    
@@ -43,6 +45,11 @@ public class BoardFeature implements Feature {
 		// Take the action
 		s.makeMove(a.index);
 		
+		// If fatal move, return null
+		if(s.hasLost()) {
+			return null;
+		}
+		
 		// Feature: number of rows cleared/eroded
     	int erodedRows = s.getRowsCleared() - numRowsCleared;
     	resTemp[0][curInd++] = erodedRows;
@@ -63,9 +70,9 @@ public class BoardFeature implements Feature {
 		Arrays.sort(temp);
 		
 		int maxH = temp[temp.length-1];
-		resTemp[0][curInd++] = maxH;
+//		resTemp[0][curInd++] = maxH;
 		int minH = temp[0];
-		resTemp[0][curInd++] = minH;
+//		resTemp[0][curInd++] = minH;
 
 		int[] colHeight = s.getTop();
 		int totalHeight = 0;
@@ -81,7 +88,7 @@ public class BoardFeature implements Feature {
 		for(int i=0; i < s.COLS; i++) {
 			// Column heights
 			int h = colHeight[i];
-			resTemp[0][curInd++] = h;
+//			resTemp[0][curInd++] = h;
 			
 			SimpleMatrix col = board.extractVector(false, i);
 			double nFullCol = col.elementSum();
@@ -94,15 +101,24 @@ public class BoardFeature implements Feature {
 		
 		// Mean column height
 		double avgH = totalHeight / cols;
-		resTemp[0][curInd++] = avgH;
+//		resTemp[0][curInd++] = avgH;
 		// Max - mean height
 		double maxAvgDiff = maxH - avgH;
-		resTemp[0][curInd++] = maxAvgDiff;
+//		resTemp[0][curInd++] = maxAvgDiff;
 		// Mean - min height
 		double minAvgDiff = avgH - minH;
-		resTemp[0][curInd++] = minAvgDiff;		
+//		resTemp[0][curInd++] = minAvgDiff;		
 
-
+		// Height inertia
+		double hInertia = 0;
+		for(int i = 0; i < State.COLS; i++) {
+			for(int j = 0; j < State.ROWS; j++) {
+				hInertia += board.get(j,i)*j;
+			}
+		}
+		resTemp[0][curInd++] = hInertia;
+		
+		
 		// Size of most-filled row, least, average, average below maxH
 		//double[] rowFill = new double[s.ROWS];
 		//double totalRowFill = 0.0;
@@ -133,10 +149,10 @@ public class BoardFeature implements Feature {
 		double totalHDiff = 0.0;
 		for(int i = 0; i < State.COLS - 1; i++) {
 			double d = Math.abs(colHeight[i] - colHeight[i+1]);
-			resTemp[0][curInd++] = d;
+//			resTemp[0][curInd++] = d;
 			totalHDiff += d;
 		}
-		resTemp[0][curInd++] = totalHDiff;
+//		resTemp[0][curInd++] = totalHDiff;
 		
 		// Landing height of last piece
 		// Not sure how to quickly calculate this
@@ -153,16 +169,7 @@ public class BoardFeature implements Feature {
 				prevBlock = nextBlock;
 			}
 		}
-		resTemp[0][curInd++] = numFlips;
-		
-		// Height inertia
-		double hInertia = 0;
-		for(int i = 0; i < State.COLS; i++) {
-			for(int j = 0; j < State.ROWS; j++) {
-				hInertia += board.get(j,i)*j;
-			}
-		}
-		resTemp[0][curInd++] = hInertia;
+//		resTemp[0][curInd++] = numFlips;
 		
 		// Rows with holes
 		int nRowsHoles = 0;
@@ -172,7 +179,7 @@ public class BoardFeature implements Feature {
 				nRowsHoles++;
 			}
 		}
-		resTemp[0][curInd++] = nRowsHoles;
+//		resTemp[0][curInd++] = nRowsHoles;
 		
 		// Hole depth/number of overhanging full cells
 		int nOverhang = 0;
@@ -189,7 +196,7 @@ public class BoardFeature implements Feature {
 				}
 			}
 		}
-		resTemp[0][curInd++] = nOverhang;
+//		resTemp[0][curInd++] = nOverhang;
 
 		
 		// Number of filled spaces in top four rows
@@ -199,6 +206,8 @@ public class BoardFeature implements Feature {
 		// Number of filled spaces in all rows
 		double numFilled = board.elementSum();
 		resTemp[0][curInd++] = numFilled;
+		
+		resTemp[0][curInd++] = nHoles;
 		
 		// Return the features.  Can change which features are used by 
 		// changing assignments to resTemp and nFeatures above
