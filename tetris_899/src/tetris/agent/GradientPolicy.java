@@ -4,6 +4,7 @@ import org.ejml.simple.SimpleMatrix;
 
 import tetris.agent.Trajectory.SARTuple;
 import tetris.simulator.*;
+import tetris.trajgen.GradientResult;
 
 /** A Policy interface implementation for Policy Gradient method
  * @author icoderaven
@@ -186,6 +187,31 @@ public class GradientPolicy implements Policy {
 //		return baselines;
 //		
 //	}
+	
+	public void fit_policy( GradientResult[] results, double step_size ) {
+		SimpleMatrix deltaSum = new SimpleMatrix(_params.numRows(), 1);
+		SimpleMatrix covSum = new SimpleMatrix(_params.numRows(), _params.numRows());
+		
+		deltaSum.set(0);
+		covSum.set(0);
+		
+		for( int i = 0; i < results.length; i++ ) {
+			deltaSum = deltaSum.plus( results[i].gradient );
+			covSum = covSum.plus( results[i].covariance );
+		}
+		deltaSum = deltaSum.scale( 1.0/results.length );
+		covSum = covSum.scale( 1.0/results.length );
+		
+		covSum = covSum.plus( SimpleMatrix.identity(covSum.numRows()).scale(1E-12) ); // Hack smoothing
+		SimpleMatrix info = covSum.invert();
+		
+		// Scale delta by info matrix
+		SimpleMatrix grad = info.mult(deltaSum);
+		
+		_params = _params.plus(step_size, grad);
+		System.out.format("Step size: %f%n", Math.sqrt(grad.normF()) );
+		
+	}
 	
 	public void fit_policy(Trajectory[] t_list, double step_size) {
 		SimpleMatrix deltaSum = new SimpleMatrix(_params.numRows(), 1);

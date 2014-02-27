@@ -8,19 +8,21 @@ import org.ejml.simple.SimpleMatrix;
 import tetris.simulator.State;
 import tetris.trajgen.FixedLengthTrajectoryGenerator;
 import tetris.trajgen.FixedStateGenerator;
+import tetris.trajgen.GradientResult;
 import tetris.trajgen.PolicyStateGenerator;
 import tetris.trajgen.StateGenerator;
 import tetris.trajgen.TrajectoryGenerationPool;
 import tetris.trajgen.TrajectoryGenerator;
+import tetris.trajgen.GradientCalculationPool;
 
 public class Trainer {
 
 	public static void main(String[] args) {
 		
-		int trajectoryBatchSize = 20; // 2 x num parameters
-		int updateBatchSize = 2; // # steps to run before decreasing step size, temp, gamma, etc.
+		int trajectoryBatchSize = 30; // 2 x num parameters
+		int updateBatchSize = 10; // # steps to run before decreasing step size, temp, gamma, etc.
 		int updateIterationCounter = 0;
-		int maxTrajectoryLength = 10000;
+		int maxTrajectoryLength = (int) 1E9;
 		int trainerSteps = 0;
 		
 		
@@ -56,16 +58,16 @@ public class Trainer {
 		State startState = new State();
 		
 		TrajectoryGenerationPool trajMachine = new TrajectoryGenerationPool(8); // # threads
+		GradientCalculationPool gradMachine = new GradientCalculationPool(8);
 
 //		StateGenerator stateGen = new FixedStateGenerator(startState);
 		Policy trainerPi = new RandomPolicy();
 		StateGenerator stateGen = new PolicyStateGenerator(trainerPi, startState, trainerSteps);
-		RewardFunction func1 = new LinesClearedReward(0.0);
+		RewardFunction func1 = new LinesClearedReward(1.0);
 		RewardFunction func2 = new TurnsAliveReward(0.0);
-		RewardFunction func3 = new DeathReward(-10.0); // Penalty of -100 for dieing
-//		RewardFunction comp1 = new CompositeReward(func1, func2);
-//		RewardFunction rewardFunc = new CompositeReward(comp1, func3);
-		RewardFunction rewardFunc = new DeathReward(-10.0);
+		RewardFunction func3 = new DeathReward(-10.0); // Penalty of -10 for dieing
+		RewardFunction comp1 = new CompositeReward(func1, func2);
+		RewardFunction rewardFunc = new CompositeReward(comp1, func3);
 		
 		double startTemp = 1.0;
 		pi.set_temperature(startTemp);
@@ -86,9 +88,10 @@ public class Trainer {
 				for(int i = 0; i < updateBatchSize; i++) {
 					TrajectoryGenerator trajGen = new FixedLengthTrajectoryGenerator(stateGen, pi, rewardFunc, maxTrajectoryLength);
 					Trajectory[] trajectories = trajMachine.generate_trajectories(trajGen, trajectoryBatchSize);
+					GradientResult[] gradients = gradMachine.calculate_gradients(pi, trajectories);
 					
 //					pi.fit_policy(trajectories, stepSize);
-					pi.fit_policy(trajectories, 1.0);
+					pi.fit_policy(gradients, 1.0);
 				}
 				updateIterationCounter++;
 				
