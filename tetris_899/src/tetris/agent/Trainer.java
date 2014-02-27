@@ -18,9 +18,9 @@ public class Trainer {
 	public static void main(String[] args) {
 		
 		int trajectoryBatchSize = 20; // 2 x num parameters
-		int updateBatchSize = 10; // # steps to run before decreasing step size, temp, gamma, etc.
+		int updateBatchSize = 2; // # steps to run before decreasing step size, temp, gamma, etc.
 		int updateIterationCounter = 0;
-		int maxTrajectoryLength = 1000;
+		int maxTrajectoryLength = 10000;
 		int trainerSteps = 0;
 		
 		
@@ -44,7 +44,7 @@ public class Trainer {
 		SimpleMatrix metaparams;
 		 try {
 				metaparams = SimpleMatrix.loadCSV(metalogname);
-				System.out.format("Metaparameter log loaded. Starting from iteration %f%n", metaparams.get(1));
+				System.out.format("Metaparameter log loaded. Starting from iteration %f%n", metaparams.get(0));
 			 } catch(Exception e) {
 				 System.out.println("No metaparam log found. Starting new trainer.");
 				 metaparams = new SimpleMatrix(1,1);
@@ -72,12 +72,12 @@ public class Trainer {
 		double startStepSize = 1.0;
 		double stepSize = startStepSize;
 		
-		double startGamma = 0.99;
+		double startGamma = 0.95;
 		double gammaConstant = -0.01; // 30 iterations to decay to gamma = 0.95
 		pi.set_gamma(startGamma);
 		
-		double startBeta = 0.01; // % of random non-fatal moves
-		double betaConstant = -0.01;
+		double startBeta = 0.1; // % of random non-fatal moves
+		double betaConstant = -0.1;
 		pi.set_beta(startBeta);
 		
 		try {
@@ -86,8 +86,8 @@ public class Trainer {
 					TrajectoryGenerator trajGen = new FixedLengthTrajectoryGenerator(stateGen, pi, rewardFunc, maxTrajectoryLength);
 					Trajectory[] trajectories = trajMachine.generate_trajectories(trajGen, trajectoryBatchSize);
 					
-					pi.fit_policy(trajectories, stepSize);
-//					pi.fit_policy(trajectories, 1.0);
+//					pi.fit_policy(trajectories, stepSize);
+					pi.fit_policy(trajectories, 0.1);
 				}
 				updateIterationCounter++;
 				
@@ -110,11 +110,10 @@ public class Trainer {
 //				pi.set_gamma( nextGamma );
 				
 				double nextBeta = startBeta*Math.exp(updateIterationCounter*betaConstant);
-//				pi.set_beta( nextBeta );
+				pi.set_beta( nextBeta );
 				
 				System.out.format("Ran %d iterations so far. Step Size: %f, Temp: %f, Gamma: %f, Beta:%f%n", 
 				updateIterationCounter, stepSize, nextTemperature, nextGamma, nextBeta);
-//				System.out.format("Ran %d iterations so far.%n", updateIterationCounter);
 			}
 		} catch(Exception e) {
 			e.printStackTrace();

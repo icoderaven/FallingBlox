@@ -17,11 +17,12 @@ public class Agent {
 			Feature feat = new BoardFeature();
 			pi = new GradientPolicy(feat, paramMatrix);
 			pi.set_gamma(0.95);
-			pi.set_temperature(1.0); // No smoothing from temp
+			pi.set_temperature(0.1); // No smoothing from temp
 			pi.set_beta(0.0); // No random exploration at test time
 			System.out.println("Param log loaded.");
 			paramMatrix.transpose().print();
 		 } catch(Exception e) {
+			 pi = new GradientPolicy();
 			 System.out.println("No param log found. Creating new policy.");
 		 }
 	}
@@ -43,7 +44,7 @@ public class Agent {
 		System.out.println("PDF:");
 		pdf.transpose().print();
 		
-		System.out.format("Returning %d%n", move);
+		System.out.format("Returning %d with %f probability%n", move, pdf.get(move));
 
 		return move;
 	}
