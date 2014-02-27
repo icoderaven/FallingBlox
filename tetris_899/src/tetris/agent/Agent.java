@@ -8,8 +8,11 @@ import tetris.trajgen.*;
 public class Agent {
 
 	public GradientPolicy pi;
+//	public CEPolicy pi;
 
 	public Agent() {
+		
+//		pi = new CEPolicy();
 
 		String logname = "params.txt";
 		try {
@@ -40,11 +43,11 @@ public class Agent {
 		int a = pi.get_action(s);
 		int move = a;
 
-		SimpleMatrix pdf = pi.pi(s);
-		System.out.println("PDF:");
-		pdf.transpose().print();
-		
-		System.out.format("Returning %d with %f probability%n", move, pdf.get(move));
+//		SimpleMatrix pdf = pi.pi(s);
+//		System.out.println("PDF:");
+//		pdf.transpose().print();
+//		
+//		System.out.format("Returning %d with %f probability%n", move, pdf.get(move));
 
 		return move;
 	}
