@@ -14,8 +14,12 @@ public class Agent {
 		String logname = "params.txt";
 		try {
 			SimpleMatrix paramMatrix = SimpleMatrix.loadCSV(logname);
-			Feature feat = new BoardFeature();
+			Feature feat = new AbbeelFeature();
 			pi = new GradientPolicy(feat, paramMatrix);
+			double startTemp = 1.0;
+			double startGamma = 0.99;
+			pi.set_temperature(startTemp);
+			pi.set_gamma(startGamma);
 			System.out.println("Param log loaded.");
 		 } catch(Exception e) {
 			 System.out.println("No param log found. Creating new policy.");
