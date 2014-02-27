@@ -31,10 +31,6 @@ public abstract class TrajectoryGenerator implements Callable<Trajectory> {
 	protected State _currentState;
 //	protected double lastReward;
 	
-	private State deadState;
-	private State preDeadState;
-	Action fatalAction;
-	
 	/**
 	 * Construct a TrajectoryGenerator from a StateGenerator, Policy, and RewardFunction. This
 	 * method makes copies of the arguments to use.
@@ -106,7 +102,6 @@ public abstract class TrajectoryGenerator implements Callable<Trajectory> {
 	
 //		State stateCopy = new State(_currentState); // Not needed because SARTuple makes a copy
 		_trajectory.add(_currentState, action, reward);
-		
 		// This accounts for odd lag in our reward functions
 //		lastReward = reward;
 		

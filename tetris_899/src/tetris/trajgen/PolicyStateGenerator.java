@@ -9,19 +9,19 @@ public class PolicyStateGenerator extends StateGenerator {
 	protected Policy _policy;
 	protected State _startState;
 	protected int _horizon;
-	
+
 	public PolicyStateGenerator(Policy policy, State startState, int numSteps) {
 		_policy = policy.copy();
 		_startState = new State(startState);
 		_horizon = numSteps;
 	}
-	
+
 	public PolicyStateGenerator(PolicyStateGenerator other) {
 		_policy = other._policy.copy();
 		_startState = new State(other._startState);
 		_horizon = other._horizon;
 	}
-	
+
 	StateGenerator copy() {
 		StateGenerator ret = new PolicyStateGenerator(this);
 		return ret;

@@ -196,7 +196,7 @@ public class BoardFeature implements Feature {
 				}
 			}
 		}
-		resTemp[0][curInd++] = nOverhang;
+//		resTemp[0][curInd++] = nOverhang;
 
 		
 		// Number of filled spaces in top four rows

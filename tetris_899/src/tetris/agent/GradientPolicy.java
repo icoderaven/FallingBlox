@@ -214,62 +214,180 @@ public class GradientPolicy implements Policy {
 	}
 	
 	public void fit_policy(Trajectory[] t_list, double step_size) {
-		SimpleMatrix deltaSum = new SimpleMatrix(_params.numRows(), 1);
-		SimpleMatrix covSum = new SimpleMatrix(_params.numRows(), _params.numRows());
+		//TODO Average gradient over trajectories
+		//Create a container for all the evaluated deltas
 		
-		deltaSum.set(0);
-		covSum.set(0);
-		
+		SimpleMatrix gradSum = new SimpleMatrix(_params.numRows(), 1);
+		SimpleMatrix trajGradSum = new SimpleMatrix(_params.numRows(), 1);
+		SimpleMatrix eligibility_sum = new SimpleMatrix(_params.numRows(), 1);
+		SimpleMatrix reward_sum = new SimpleMatrix(1, 1);
+		SimpleMatrix gradCovs = new SimpleMatrix(_params.numRows(), _params.numRows());
+		SimpleMatrix fisher_sum = new SimpleMatrix(_params.numRows(), _params.numRows());
+		SimpleMatrix grad_est_sum = new SimpleMatrix(_params.numRows(), 1);
+		gradCovs.set(0);
+		double gamma=0.99;
 		// Calculate optimal baselines
 //		SimpleMatrix baselines = calculate_baselines(t_list);
+		
 //		baselines.transpose().print();
 		
-		SimpleMatrix z = new SimpleMatrix( _params.numRows(), 1 );
-		SimpleMatrix delta = new SimpleMatrix( _params.numRows(), 1 );
-		SimpleMatrix covs = new SimpleMatrix( _params.numRows(), _params.numRows() );
-		
+		int contrib = 0;
 		for(int i=0; i<t_list.length; i++)
 		{
-			z.set(0);
-			delta.set(0);
-			covs.set(0);
-			Trajectory traj = t_list[i];
+			trajGradSum.set(1E-3);
 			
-			for(int t = 0; t < traj.tuples.size(); t++)
+			double discount = 1.0;
+			for(int j=0; j < t_list[i].tuples.size(); j++)
 			{
-				SARTuple sar = traj.tuples.get(t);
+				SARTuple sar = t_list[i].tuples.get(j);
 				SimpleMatrix grad = gradient(sar.state, sar.action);
 				
-				// z_t+1 = gamma*z_t + grad
-				z = z.scale(_gamma).plus( grad );
+//				System.out.format("Step %d gradient:%n", j);
+//				grad.transpose().print();
 				
-				// delta_t+1 = delta_t*(t/(t+1)) + r_t+1 * z_t+1 / t+1
-				delta = delta.scale( 1.0*t/( t + 1.0 ) ).plus( z.scale( sar.reward/( t + 1.0 ) ) );
+				trajGradSum = trajGradSum.plus(grad);
 				
-				covs = covs.plus( grad.mult( grad.transpose() ) ); 
-				
+//				SimpleMatrix discountedReward = new SimpleMatrix(_params.numRows(), 1);
+//				discountedReward.set( t_list[i].sum_rewards_tail(j, gamma) );
+//
+////				System.out.format("Step %f reward:%n", sar.reward );
+//				
+////				SimpleMatrix advantage = discountedReward.minus( baselines );
+//				SimpleMatrix advantage = discountedReward;
+//				
+//				SimpleMatrix gradContribution = trajGradSum.elementMult( advantage );
+////				System.out.format("Step %d grad contribution:%n", j);
+////				gradContribution.transpose().print();
+//				
+//				trajGradSum = trajGradSum.scale(_gamma);
+//				gradSum = gradSum.plus( gradContribution );
+//				
+//				// Keep a running total of the outer products for covariance calculation later
+//				gradCovs = gradCovs.plus( grad.mult( grad.transpose() ) );
+//				
+//				// Instantaneous reward, non-discounted
+////				delta = delta.plus( grad.scale( t.tuples.get(j).reward) );
+////				System.out.format("Reward at step %d: %f%n", j, t.tuples.get(j).reward);
+//				
+//				// Average reward, non-discounted
+////				delta = delta.plus( grad.scale( averageReward ));
+//				
+//				// Reward to go, discounted
+////				delta = delta.plus( grad.scale( t.sum_rewards_tail(j, _gamma) ) );
+//				
+//				// Running average reward, discounted
+////				z = z.scale(gamma).plus(grad);
+//				//delta_{t+1} = delta + (1/t+1)(r_{t+1}*z_{t+1} - delta)
+////				delta = delta.plus(1.0/(j+2), z.scale(t.sum_rewards(j, 1.0)).minus(delta));
+////				System.out.println("Delta running average:");
+////				delta.transpose().print();
+//				
+//				contrib++;
+//				discount = discount * _gamma;
 			}
-			deltaSum = deltaSum.plus( delta.scale( 1.0/traj.tuples.size() ) );
-			covSum = covSum.plus( covs.scale( 1.0/traj.tuples.size() ) );
+			//times reward
+			SimpleMatrix discountedReward = new SimpleMatrix(_params.numRows(), 1);
+			discountedReward.set(t_list[i].sum_rewards_tail(0, gamma));
+			fisher_sum = fisher_sum.plus(trajGradSum.mult(trajGradSum.transpose()));
+			grad_est_sum = grad_est_sum.plus(trajGradSum.elementMult(discountedReward) );
+			eligibility_sum = eligibility_sum.plus(trajGradSum);
+			SimpleMatrix r = new SimpleMatrix(1,1);
+			r.set((t_list[i].sum_rewards_tail(0, gamma)) );
+			reward_sum = reward_sum.plus(r);
+
 		}
+//		
+//		// Averaged over each time in each trajectory
+//		gradSum = gradSum.scale(1.0/contrib);
+//		gradCovs = gradCovs.scale(1.0/contrib);
+//		
+//		// Calculate information matrix
+//		gradCovs = gradCovs.plus( SimpleMatrix.identity(gradCovs.numRows()).scale(1E-3) ); // Hack smoothing
+////		for(int i = 0; i < gradCovs.numRows(); i++) {
+////			if(gradCovs.get(i,i) < 1E-3) {
+////				gradCovs.set(i, i, 1.0);
+////			}
+////		}
+//		SimpleMatrix gradInfo = gradCovs.invert();
+//		
+//		// Scale delta by info matrix
+//		SimpleMatrix grad = gradInfo.mult(gradSum);
+		SimpleMatrix fisher = fisher_sum.scale(1.0/t_list.length);
+		SimpleMatrix fisher_inv = fisher.pseudoInverse();
+		SimpleMatrix grad = grad_est_sum.scale(1.0/t_list.length);
+		SimpleMatrix eligibility = eligibility_sum.scale(1.0/t_list.length);
+		SimpleMatrix avg_reward = reward_sum.scale(1.0/t_list.length);
 		
-		// Averaged over each trajectory
-		deltaSum = deltaSum.scale( 1.0/t_list.length );
-		covSum = covSum.scale( 1.0/t_list.length );
+		SimpleMatrix tbi = fisher_sum.minus( (eligibility.mult(eligibility.transpose()))  );
+		SimpleMatrix Q = (SimpleMatrix.identity(1).plus( eligibility.transpose().mult( tbi.pseudoInverse() ).mult(eligibility)) ).scale(1.0/t_list.length);
 		
-		// Calculate information matrix
-		covSum = covSum.plus( SimpleMatrix.identity(covSum.numRows()).scale(1E-12) ); // Hack smoothing
-		SimpleMatrix info = covSum.invert();
+		SimpleMatrix baseline = Q.mult(avg_reward.minus( eligibility.transpose().mult(fisher_inv.mult(grad) )) );
 		
-		// Scale delta by info matrix
-		SimpleMatrix grad = info.mult(deltaSum);
-		
+		SimpleMatrix natural_grad = fisher_inv.mult(grad.minus(eligibility.mult(baseline)) );
 		//Step params in this direction
 		double step = step_size;
-		_params = _params.plus(step, grad);
-//		normalize_params();
-		System.out.format("Step size: %f%n", Math.sqrt(grad.normF()) );
+		_params = _params.plus(step, natural_grad);
+		
+		System.out.format("Step size: %f%n", Math.sqrt(natural_grad.normF()) );
 	}
+	
+//	public void fit_policy(Trajectory[] t_list, double step_size) {
+//		SimpleMatrix deltaSum = new SimpleMatrix(_params.numRows(), 1);
+//		SimpleMatrix covSum = new SimpleMatrix(_params.numRows(), _params.numRows());
+//		
+//		deltaSum.set(0);
+//		covSum.set(0);
+//		
+//		// Calculate optimal baselines
+////		SimpleMatrix baselines = calculate_baselines(t_list);
+////		baselines.transpose().print();
+//		
+//		SimpleMatrix z = new SimpleMatrix( _params.numRows(), 1 );
+//		SimpleMatrix delta = new SimpleMatrix( _params.numRows(), 1 );
+//		SimpleMatrix covs = new SimpleMatrix( _params.numRows(), _params.numRows() );
+//		
+//		for(int i=0; i<t_list.length; i++)
+//		{
+//			z.set(0);
+//			delta.set(0);
+//			covs.set(0);
+//			Trajectory traj = t_list[i];
+//			
+//			for(int t = 0; t < traj.tuples.size(); t++)
+//			{
+//				SARTuple sar = traj.tuples.get(t);
+//				SimpleMatrix grad = gradient(sar.state, sar.action);
+//				
+//				// z_t+1 = gamma*z_t + grad
+//				z = z.scale(_gamma).plus( grad );
+//				
+//				// delta_t+1 = delta_t*(t/(t+1)) + r_t+1 * z_t+1 / t+1
+//				delta = delta.scale( 1.0*t/( t + 1.0 ) ).plus( z.scale( sar.reward/( t + 1.0 ) ) );
+//				
+//				covs = covs.plus( grad.mult( grad.transpose() ) ); 
+//				
+//			}
+//			deltaSum = deltaSum.plus( delta.scale( 1.0/traj.tuples.size() ) );
+//			covSum = covSum.plus( covs.scale( 1.0/traj.tuples.size() ) );
+//		}
+//		
+//		// Averaged over each trajectory
+//		deltaSum = deltaSum.scale( 1.0/t_list.length );
+//		covSum = covSum.scale( 1.0/t_list.length );
+//		
+//		// Calculate information matrix
+//		covSum = covSum.plus( SimpleMatrix.identity(covSum.numRows()).scale(1E-12) ); // Hack smoothing
+//		SimpleMatrix info = covSum.invert();
+//		
+//		// Scale delta by info matrix
+//		SimpleMatrix grad = info.mult(deltaSum);
+//		
+//		//Step params in this direction
+//		double step = step_size;
+//		_params = _params.plus(step, grad);
+////		normalize_params();
+//		System.out.format("Step size: %f%n", Math.sqrt(grad.normF()) );
+//	}
 
 	@Override
 	public double pi(State s, int a) {

@@ -1,7 +1,6 @@
 package tetris.trajgen;
 
 import tetris.agent.Trajectory;
-import java.util.Vector;
 import java.util.concurrent.*;
 
 /**
@@ -40,7 +39,6 @@ public class TrajectoryGenerationPool {
 			TrajectoryGenerator gen = trajGen.copy();
 			taskService.submit(gen);
 		}
-		
 		// Record the results as they are done
 		double startTime = System.currentTimeMillis();
 		double rewardSum = 0;

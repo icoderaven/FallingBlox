@@ -2,6 +2,8 @@ package tetris.agent;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Collections;
+import java.util.Vector;
 
 import org.ejml.simple.SimpleMatrix;
 
@@ -34,7 +36,7 @@ public class Trainer {
 		GradientPolicy pi;
 		try {
 			SimpleMatrix paramMatrix = SimpleMatrix.loadCSV(logname);
-			Feature feat = new BoardFeature();
+			Feature feat = new AbbeelFeature();
 			pi = new GradientPolicy(feat, paramMatrix);
 			System.out.println("Param log loaded.");
 		 } catch(Exception e) {
@@ -62,10 +64,12 @@ public class Trainer {
 
 //		StateGenerator stateGen = new FixedStateGenerator(startState);
 		Policy trainerPi = new RandomPolicy();
-		StateGenerator stateGen = new PolicyStateGenerator(trainerPi, startState, trainerSteps);
-		RewardFunction func1 = new LinesClearedReward(1.0);
-		RewardFunction func2 = new TurnsAliveReward(0.0);
-		RewardFunction func3 = new DeathReward(-10.0); // Penalty of -10 for dieing
+		StateGenerator stateGen = new PolicyStateGenerator(trainerPi,
+				startState, trainerSteps);
+		RewardFunction func1 = new LinesClearedReward(10.0);
+		RewardFunction func2 = new TurnsAliveReward(1);
+		RewardFunction func3 = new DeathReward(-100); // Penalty of -100 for
+														// dieing
 		RewardFunction comp1 = new CompositeReward(func1, func2);
 		RewardFunction rewardFunc = new CompositeReward(comp1, func3);
 		
