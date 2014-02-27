@@ -99,7 +99,7 @@ public abstract class CETrajectoryGenerator implements Callable<CETrajectory> {
 	protected void step() {
 		
 		// Record history and take a step
-		int action = _policy.get_action(_currentState);
+		int action = _policy.get_action(_currentState, _trajectory.params);
 		
 //		System.out.format("Making an action %d%n", action.index);
 		
