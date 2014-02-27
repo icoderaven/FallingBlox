@@ -186,7 +186,9 @@ public class GradientPolicy implements Policy {
 		
 		SimpleMatrix gradSum = new SimpleMatrix(_params.numRows(), 1);
 		SimpleMatrix trajGradSum = new SimpleMatrix(_params.numRows(), 1);
+		SimpleMatrix eligibility_sum = new SimpleMatrix(_params.numRows(), 1);
 		SimpleMatrix gradCovs = new SimpleMatrix(_params.numRows(), _params.numRows());
+		SimpleMatrix fisher_sum = new SimpleMatrix(_params.numRows(), _params.numRows());
 		SimpleMatrix grad_est_sum = new SimpleMatrix(_params.numRows(), 1);
 		gradCovs.set(0);
 		double gamma=0.99;
@@ -252,7 +254,9 @@ public class GradientPolicy implements Policy {
 			//times reward
 			SimpleMatrix discountedReward = new SimpleMatrix(_params.numRows(), 1);
 			discountedReward.set(t_list[i].sum_rewards_tail(0, gamma));
-			grad_est_sum = trajGradSum.elementMult(discountedReward.minus(baselines));
+			fisher_sum = fisher_sum.plus(trajGradSum.mult(trajGradSum.transpose()));
+			grad_est_sum = grad_est_sum.plus(trajGradSum.elementMult(discountedReward.minus(baselines)) );
+			eligibility_sum = eligibility_sum.plus(trajGradSum);
 
 		}
 //		
