@@ -17,6 +17,10 @@ public class CETrainer {
 		int maxTrajectoryLength = 10000;
 		int updateIterationCounter = 0;
 		
+		String logname = "ce_params.txt";
+		String mulogname = "ce_mu.txt";
+		String sigmalogname = "ce_sigma.txt";
+		
 		CEPolicy pi = new CEPolicy();
 		
 		State startState = new State();
@@ -42,8 +46,12 @@ public class CETrainer {
 				pi.fit_policy(trajectories);
 				updateIterationCounter++;
 				
-//				SimpleMatrix parameters = pi.get_params();
+				SimpleMatrix parameters = pi.get_params();
 //				parameters.print();
+				parameters.saveToFileCSV(logname);
+				
+				pi.getMu().saveToFileCSV(mulogname);
+				pi.getSigma().saveToFileCSV(sigmalogname);
 				
 				System.out.format("Ran %d iterations so far.", updateIterationCounter);
 			}
