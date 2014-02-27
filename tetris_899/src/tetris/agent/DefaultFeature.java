@@ -7,9 +7,9 @@ import tetris.simulator.State;
 public class DefaultFeature implements Feature {
 
 	@Override
-	public SimpleMatrix get_feature_vector(State temp_s, Action a) {
+	public SimpleMatrix get_feature_vector(State temp_s, int a) {
 		State s = new State(temp_s);
-		s.makeMove(a.index);
+		s.makeMove(a);
 		SimpleMatrix temp = new SimpleMatrix(State.COLS*State.ROWS, 1) ;
 		for(int i=0; i< s.ROWS; i++)
 		{

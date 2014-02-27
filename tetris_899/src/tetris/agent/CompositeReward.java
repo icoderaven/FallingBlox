@@ -23,7 +23,7 @@ public class CompositeReward extends RewardFunction {
 	}
 
 	@Override
-	protected double calculate_reward(State state, Action action) {
+	protected double calculate_reward(State state, int action) {
 		return _comp1.get_reward(state, action) + _comp2.get_reward(state, action);
 	}
 

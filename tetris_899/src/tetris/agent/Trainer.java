@@ -55,16 +55,17 @@ public class Trainer {
 
 		State startState = new State();
 		
-		TrajectoryGenerationPool trajMachine = new TrajectoryGenerationPool(1); // # threads
+		TrajectoryGenerationPool trajMachine = new TrajectoryGenerationPool(8); // # threads
 
 //		StateGenerator stateGen = new FixedStateGenerator(startState);
 		Policy trainerPi = new RandomPolicy();
 		StateGenerator stateGen = new PolicyStateGenerator(trainerPi, startState, trainerSteps);
-		RewardFunction func1 = new LinesClearedReward(1.0);
+		RewardFunction func1 = new LinesClearedReward(0.0);
 		RewardFunction func2 = new TurnsAliveReward(0.0);
 		RewardFunction func3 = new DeathReward(-10.0); // Penalty of -100 for dieing
-		RewardFunction comp1 = new CompositeReward(func1, func2);
-		RewardFunction rewardFunc = new CompositeReward(comp1, func3);
+//		RewardFunction comp1 = new CompositeReward(func1, func2);
+//		RewardFunction rewardFunc = new CompositeReward(comp1, func3);
+		RewardFunction rewardFunc = new DeathReward(-10.0);
 		
 		double startTemp = 1.0;
 		pi.set_temperature(startTemp);
@@ -76,8 +77,8 @@ public class Trainer {
 		double gammaConstant = -0.01; // 30 iterations to decay to gamma = 0.95
 		pi.set_gamma(startGamma);
 		
-		double startBeta = 0.1; // % of random non-fatal moves
-		double betaConstant = -0.1;
+		double startBeta = 0.0; // % of random non-fatal moves
+		double betaConstant = -0.01;
 		pi.set_beta(startBeta);
 		
 		try {
@@ -87,7 +88,7 @@ public class Trainer {
 					Trajectory[] trajectories = trajMachine.generate_trajectories(trajGen, trajectoryBatchSize);
 					
 //					pi.fit_policy(trajectories, stepSize);
-					pi.fit_policy(trajectories, 0.1);
+					pi.fit_policy(trajectories, 1.0);
 				}
 				updateIterationCounter++;
 				

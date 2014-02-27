@@ -8,11 +8,15 @@ import tetris.simulator.State;
  */
 public class Action {
 
-		final public int index;
+		public int index = -1;
 		
 		public Action(int ind)
 		{
 			index = ind;
+		}
+		
+		public Action(Action other) {
+			index = other.index;
 		}
 		
 		/** 

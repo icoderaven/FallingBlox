@@ -7,23 +7,23 @@ import tetris.simulator.*;
 public class RandomPolicy implements Policy {
 	
 	@Override
-	public Action get_action(State curr_state) {
+	public int get_action(State curr_state) {
 		// return random action
 		int[][] moves =  curr_state.legalMoves();
 		//Get a random move from list of moves nx2
 		int move_index = (int) (Math.random()*moves.length);
 //		return new Action(moves[move_index][0], moves[move_index][1]) ;
-		return new Action(move_index);
+		return move_index;
 	}
 	
 
 	@Override
-	public double pi(State s, Action a) {
+	public double pi(State s, int a) {
 		return 1.0;
 	}
 
 	@Override
-	public SimpleMatrix gradient(State s, Action a) {
+	public SimpleMatrix gradient(State s, int a) {
 		// TODO Auto-generated method stub
 		return null;
 	}

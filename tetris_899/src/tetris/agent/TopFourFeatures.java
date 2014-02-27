@@ -17,7 +17,7 @@ public class TopFourFeatures implements Feature {
 
 	public int nFeatures = 4 * State.COLS; // + 2*State.COLS + State.ROWS;
 
-	public SimpleMatrix get_feature_vector(State temp_s, Action a) {
+	public SimpleMatrix get_feature_vector(State temp_s, int a) {
 		// Prepare to return the features
 		double rows = (double) State.ROWS;
 		double cols = (double) State.COLS;
@@ -35,7 +35,7 @@ public class TopFourFeatures implements Feature {
 		State s = new State(temp_s);
 		int numRowsCleared = s.getRowsCleared();
 
-		s.makeMove(a.index);
+		s.makeMove(a);
 
 		// Extract the board and set all nonzero values to 1
 		SimpleMatrix board = new SimpleMatrix(State.ROWS, State.COLS);

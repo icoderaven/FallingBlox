@@ -8,11 +8,11 @@ public class Trajectory {
 	
 	public class SARTuple {
 	    final public State state;
-	    final public Action action;
+	    final public int action;
 	    final public double reward;
 
 	    //Link constructor
-	    public SARTuple(State s, Action a, double r) {
+	    public SARTuple(State s, int a, double r) {
 	    	state = new State(s);
 	    	action = a;
 	    	reward = r;
@@ -48,7 +48,7 @@ public class Trajectory {
 		return ret;
 	}
 	
-	public boolean add(State s, Action a, double r) {
+	public boolean add(State s, int a, double r) {
 		SARTuple sar = new SARTuple(s, a, r);
 		return tuples.add(sar);
 	}

@@ -7,7 +7,7 @@ import tetris.simulator.*;
 public interface Feature {
 	
 	// Return a feature vector for the state-action pair
-	public SimpleMatrix get_feature_vector(State s, Action a);
+	public SimpleMatrix get_feature_vector(State s, int a);
 
 	// Return the dimensionality of features returned by this feature function
 	public int get_feature_dimension();

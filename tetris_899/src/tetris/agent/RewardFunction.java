@@ -38,7 +38,7 @@ public abstract class RewardFunction {
 		double sum = 0.0;
 		SimpleMatrix probs = policy.pi(state);
 		for(int a_prime = 0; a_prime < probs.numRows(); a_prime++) {
-			sum += probs.get(a_prime)*get_reward(state, new Action(a_prime));
+			sum += probs.get(a_prime)*get_reward(state, a_prime);
 		}
 		return sum;
 	}
@@ -49,7 +49,7 @@ public abstract class RewardFunction {
 	 * @param action - The action to calculate the reward for.
 	 * @return The reward associated with R(state, action)
 	 */
-	public double get_reward(State state, Action action) {
+	public double get_reward(State state, int action) {
 		return _weight*calculate_reward(state, action);
 	}
 	
@@ -59,6 +59,6 @@ public abstract class RewardFunction {
 	 * @param action - The action to calculate the reward for.
 	 * @return The reward associated with R(state, action)
 	 */
-	abstract protected double calculate_reward(State state, Action action);
+	abstract protected double calculate_reward(State state, int action);
 	
 }

@@ -23,14 +23,15 @@ public class PolicyStateGenerator extends StateGenerator {
 	}
 	
 	StateGenerator copy() {
-		return new PolicyStateGenerator(this);
+		StateGenerator ret = new PolicyStateGenerator(this);
+		return ret;
 	}
 
 	State generate_state() {
 		State ret = new State(_startState);
 		for(int i = 0; i < _horizon; i++) {
-			Action a = _policy.get_action(ret);
-			a.apply(ret);
+			int a = _policy.get_action(ret);
+			ret.makeMove(a);
 		}
 		return ret;
 	}

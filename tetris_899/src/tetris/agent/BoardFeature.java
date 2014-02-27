@@ -18,7 +18,7 @@ public class BoardFeature implements Feature {
 	public int nFeatures = 13;
 //	public int nFeatures = 4;
 	
-    public SimpleMatrix get_feature_vector(State prev_s, Action a)
+    public SimpleMatrix get_feature_vector(State prev_s, int a)
     {    
     	long startTime = System.nanoTime();
     	
@@ -43,7 +43,7 @@ public class BoardFeature implements Feature {
 		}
 		
 		// Take the action
-		s.makeMove(a.index);
+		s.makeMove(a);
 		
 		// If fatal move, return null
 		if(s.hasLost()) {

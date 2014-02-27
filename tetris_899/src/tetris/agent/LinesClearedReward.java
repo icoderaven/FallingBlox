@@ -27,10 +27,10 @@ public class LinesClearedReward extends RewardFunction {
 	 * Returns a reward based on the number of rows cleared so far in the history
 	 * of state.
 	 */
-	public double calculate_reward(State state, Action action) {
+	public double calculate_reward(State state, int action) {
 		State copyState = new State(state);
 		int prevCleared = copyState.getRowsCleared();
-		action.apply(copyState);
+		copyState.makeMove(action);
 		int nextCleared = copyState.getRowsCleared();
 		return (nextCleared - prevCleared);
 	}

@@ -37,8 +37,8 @@ public class Agent {
 	// - index n of the action to execute in legalMoves
 	public int chooseAction(State s, int[][] legalMoves) {
 		
-		Action a = pi.get_action(s);
-		int move = a.index;
+		int a = pi.get_action(s);
+		int move = a;
 
 		SimpleMatrix pdf = pi.pi(s);
 		System.out.println("PDF:");

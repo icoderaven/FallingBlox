@@ -26,9 +26,9 @@ public class TurnsAliveReward extends RewardFunction {
 	/**
 	 * Calculates the reward based on the turn number of the state
 	 */
-	protected double calculate_reward(State state, Action action) {
+	protected double calculate_reward(State state, int action) {
 		State copyState = new State(state);
-		action.apply(copyState);
+		copyState.makeMove(action);
 		return (copyState.hasLost()) ? 0.0 : 1.0;
 	}
 

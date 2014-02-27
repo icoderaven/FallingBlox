@@ -51,7 +51,7 @@ public class GradientPolicy implements Policy {
 	}
 	
 	@Override
-	public Action get_action(State curr_state) {
+	public int get_action(State curr_state) {
 		
 		//Obtain the distribution of probabilities for the current action 
 		SimpleMatrix dist = pi(curr_state);
@@ -73,7 +73,7 @@ public class GradientPolicy implements Policy {
 			}
 		}
 		
-		return new Action(index);
+		return index;
 		
 	}
 
@@ -246,9 +246,9 @@ public class GradientPolicy implements Policy {
 	}
 
 	@Override
-	public double pi(State s, Action a) {
+	public double pi(State s, int a) {
 		SimpleMatrix dist = pi(s);
-		return dist.get(a.index);
+		return dist.get(a);
 	}
 	
 	@Override
@@ -266,7 +266,7 @@ public class GradientPolicy implements Policy {
 		int numValid = 0;
 		for (int a_prime = 0; a_prime < moves.length; a_prime++) {
 			
-			double logLikelihood = calculate_log_likelihood(s, new Action(a_prime));
+			double logLikelihood = calculate_log_likelihood(s, a_prime);
 			isFatal[a_prime] = logLikelihood == Double.NEGATIVE_INFINITY;
 				
 			if(logLikelihood > maxVal) {
@@ -325,7 +325,7 @@ public class GradientPolicy implements Policy {
 		return probs;
 	}
 
-	protected double calculate_log_likelihood(State s, Action a) {
+	protected double calculate_log_likelihood(State s, int a) {
 		
 		SimpleMatrix temp = _feature.get_feature_vector(s,a);
 
@@ -337,7 +337,7 @@ public class GradientPolicy implements Policy {
 		return _params.dot(temp)/_temperature;
 	}
 	
-	public double function_evaluator(State s, Action a) {
+	public double function_evaluator(State s, int a) {
 		return Math.exp(calculate_log_likelihood(s, a));
 	}
 
@@ -365,8 +365,7 @@ public class GradientPolicy implements Policy {
 		return _beta;
 	}
 	
-	@Override
-	public SimpleMatrix gradient(State s, Action a) {
+	public SimpleMatrix gradient(State s, int a) {
 		SimpleMatrix J_for_a = _feature.get_feature_vector(s, a);
 		SimpleMatrix pi_for_s = pi(s);
 		
@@ -381,7 +380,7 @@ public class GradientPolicy implements Policy {
 		SimpleMatrix all_features = new SimpleMatrix(J_for_a.numRows(), pi_for_s.numRows());
 		all_features.set(0);
 		for( int a_prime = 0; a_prime < pi_for_s.numRows(); a_prime++ ) {
-			SimpleMatrix feat = _feature.get_feature_vector(s, new Action(a_prime));
+			SimpleMatrix feat = _feature.get_feature_vector(s, a_prime);
 			if( feat == null ) {
 				continue;
 			}
@@ -404,7 +403,8 @@ public class GradientPolicy implements Policy {
 	
 	@Override
 	public Policy copy() {
-		return new GradientPolicy(this);
+		Policy ret = new GradientPolicy(this);
+		return ret;
 	}
 
 }

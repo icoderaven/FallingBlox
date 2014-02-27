@@ -23,7 +23,7 @@ public class State {
 	protected int nextPiece;
 	
 	//all legal moves - first index is piece type - then a list of 2-length arrays
-	public static int[][][] legalMoves = new int[N_PIECES][][];
+	public int[][][] legalMoves = new int[N_PIECES][][];
 	
 	//indices for legalMoves
 	public static final int ORIENT = 0;
@@ -73,6 +73,7 @@ public class State {
 	};
 	
 	//initialize legalMoves
+	protected void initialize()
 	{
 		//for each piece type
 		for(int i = 0; i < N_PIECES; i++) {
@@ -132,6 +133,7 @@ public class State {
 		top = new int[COLS];
 
 		nextPiece = randomPiece();
+		initialize();
 	}
 
 	//copy constructor
@@ -147,6 +149,7 @@ public class State {
 		top = other.top.clone();
 
 		nextPiece = other.nextPiece;
+		initialize();
 	}
 	
 	//random integer, returns 0-6
@@ -180,9 +183,9 @@ public class State {
 		}
 		
 		//check if game ended
-		if(height+pHeight[nextPiece][orient] >= ROWS) {
+		if(height+pHeight[nextPiece][orient] >= ROWS - 4) {
 			lost = true;
-			return false;
+//			return false;
 		}
 
 		
