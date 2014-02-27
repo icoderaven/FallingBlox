@@ -21,10 +21,7 @@ public class DeathReward extends RewardFunction {
 	@Override
 	protected double calculate_reward(State state, Action action) {
 		State copyState = new State(state);
-		action.apply(copyState);
-		if (copyState.hasLost()) {
-//			System.out.format("Death is here at turn %d!%n", copyState.getTurnNumber());
-		}
+		copyState.makeMove(action.index);
 		return (copyState.hasLost()) ? 1.0 : 0.0;
 	}
 

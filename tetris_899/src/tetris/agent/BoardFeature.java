@@ -14,7 +14,7 @@ import java.util.*;
 
 public class BoardFeature implements Feature {
 		
-	public int nFeatures = 13 + 2*State.COLS - 1;
+	public int nFeatures = 13 + 2*State.COLS - 1-2;
 	
     public SimpleMatrix get_feature_vector(State prev_s, Action a)
     {    
@@ -153,7 +153,7 @@ public class BoardFeature implements Feature {
 				prevBlock = nextBlock;
 			}
 		}
-		resTemp[0][curInd++] = numFlips;
+//		resTemp[0][curInd++] = numFlips;
 		
 		// Height inertia
 		double hInertia = 0;
@@ -189,7 +189,7 @@ public class BoardFeature implements Feature {
 				}
 			}
 		}
-		resTemp[0][curInd++] = nOverhang;
+//		resTemp[0][curInd++] = nOverhang;
 
 		
 		// Number of filled spaces in top four rows

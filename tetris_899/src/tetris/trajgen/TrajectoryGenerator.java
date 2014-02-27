@@ -101,11 +101,10 @@ public abstract class TrajectoryGenerator implements Callable<Trajectory> {
 		double reward = _rewardFunc.get_reward(_currentState, action);
 //		State stateCopy = new State(_currentState); // Not needed because SARTuple makes a copy
 		_trajectory.add(_currentState, action, reward);
-		
 		// This accounts for odd lag in our reward functions
 //		lastReward = reward;
 		
-		action.apply(_currentState); // This modifies _currentState!
+		_currentState.makeMove(action.index); // This modifies _currentState!
 		
 //		if(_currentState.hasLost()) {
 //			System.out.format("Died in step on turn %d%n", _currentState.getTurnNumber());

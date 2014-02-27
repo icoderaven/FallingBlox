@@ -23,7 +23,7 @@ public class State {
 	protected int nextPiece;
 	
 	//all legal moves - first index is piece type - then a list of 2-length arrays
-	public static int[][][] legalMoves = new int[N_PIECES][][];
+	public int[][][] legalMoves = new int[N_PIECES][][];
 	
 	//indices for legalMoves
 	public static final int ORIENT = 0;

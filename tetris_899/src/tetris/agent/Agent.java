@@ -14,7 +14,7 @@ public class Agent {
 		String logname = "params.txt";
 		try {
 			SimpleMatrix paramMatrix = SimpleMatrix.loadCSV(logname);
-			Feature feat = new TopFourFeatures();
+			Feature feat = new BoardFeature();
 			pi = new GradientPolicy(feat, paramMatrix);
 			System.out.println("Param log loaded.");
 		 } catch(Exception e) {

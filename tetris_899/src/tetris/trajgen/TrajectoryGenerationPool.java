@@ -39,14 +39,28 @@ public class TrajectoryGenerationPool {
 			TrajectoryGenerator gen = trajGen.copy();
 			taskService.submit(gen);
 		}
-		
 		// Record the results as they are done
 		double startTime = System.currentTimeMillis();
 		double rewardSum = 0;
 		int lengthSum = 0;
 		for(int i = 0; i < numTrajectories; i++) {
 			try {
-				Trajectory traj = taskService.take().get();
+				Future<Trajectory> future = taskService.take();//Blocks till a thread returns
+				Trajectory traj = future.get();//pulls data out of stack
+				if (!future.isDone()){
+					System.out.format("%nnonononono%n");
+					
+				}
+				else{
+					if( traj.sum_rewards_tail(0, 1.0) == -200)
+					{
+						for(int k=0; k<traj.tuples.size(); k++)
+						{
+							System.out.format("%f, ", traj.tuples.get(k).reward);
+						}
+						System.out.println();
+					}
+				}
 				rewardSum += traj.sum_rewards_tail(0, 1.0);
 				lengthSum += traj.tuples.size();
 //				System.out.format("Completed task %d with reward %f and length %d%n", i, traj.sum_rewards_tail(0,  1.0), traj.tuples.size());
@@ -69,7 +83,7 @@ public class TrajectoryGenerationPool {
 		System.out.format("Completed all task (%d/%d) at rate %f Hz with average reward %f"
 				+ " and average length %f.%n", 
 				numTrajectories, numTrajectories, 1000*(numTrajectories)/(tick - startTime),
-				rewardSum/numTrajectories, 1.0*lengthSum/numTrajectories);
+				1.0*rewardSum/numTrajectories, 1.0*lengthSum/numTrajectories);
 		return trajectories;
 		
 	}
