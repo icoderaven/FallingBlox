@@ -34,6 +34,7 @@ public class GradientGenerator implements Callable<GradientResult> {
 			trajGradSum = trajGradSum.plus(grad);
 			
 		}
+		trajGradSum = trajGradSum.scale( 1.0/_traj.tuples.size() );
 		
 		SimpleMatrix covs = trajGradSum.mult( trajGradSum.transpose() );
 		GradientResult res = new GradientResult( trajGradSum, covs, _traj.tuples.size(), 

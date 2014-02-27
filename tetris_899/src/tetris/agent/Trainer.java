@@ -24,7 +24,7 @@ public class Trainer {
 		int trajectoryBatchSize = 64; // 2 x num parameters
 		int updateBatchSize = 1; // # steps to run before decreasing step size, temp, gamma, etc.
 		int updateIterationCounter = 0;
-		int maxTrajectoryLength = (int) 1E9;
+		int maxTrajectoryLength = (int) 10000;
 		int trainerSteps = 0;
 		
 		
@@ -95,7 +95,7 @@ public class Trainer {
 					GradientResult[] gradients = gradMachine.calculate_gradients(pi, trajectories);
 					
 //					pi.fit_policy(trajectories, 0.1);
-					pi.fit_policy(gradients, 0.1);
+					pi.fit_policy(gradients, 0.01);
 				}
 				updateIterationCounter++;
 				

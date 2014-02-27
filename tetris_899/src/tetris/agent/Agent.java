@@ -23,6 +23,7 @@ public class Agent {
 			double startGamma = 0.99;
 			pi.set_temperature(startTemp);
 			pi.set_gamma(startGamma);
+			pi.set_beta(0.0);
 			System.out.println("Param log loaded.");
 		 } catch(Exception e) {
 			 pi = new GradientPolicy();

@@ -207,8 +207,8 @@ public class GradientPolicy implements Policy {
 			reward_sum = reward_sum.plus(r);
 		}
 		
-		SimpleMatrix fisher = fisher_sum.scale(1.0/results.length);
-		SimpleMatrix fisher_inv = fisher.pseudoInverse();
+		SimpleMatrix fisher = fisher_sum.scale(1.0/results.length).plus( SimpleMatrix.identity(fisher_sum.numRows()).scale(1E-3) );
+		SimpleMatrix fisher_inv = fisher.invert();
 		SimpleMatrix grad = grad_est_sum.scale(1.0/results.length);
 		SimpleMatrix eligibility = eligibility_sum.scale(1.0/results.length);
 		SimpleMatrix avg_reward = reward_sum.scale(1.0/results.length);
