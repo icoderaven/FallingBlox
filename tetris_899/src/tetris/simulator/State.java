@@ -183,9 +183,9 @@ public class State {
 		}
 		
 		//check if game ended
-		if(height+pHeight[nextPiece][orient] >= ROWS - 4) {
+		if(height+pHeight[nextPiece][orient] >= ROWS) {
 			lost = true;
-//			return false;
+			return false;
 		}
 
 		
