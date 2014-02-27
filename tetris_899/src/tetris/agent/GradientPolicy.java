@@ -18,10 +18,10 @@ public class GradientPolicy implements Policy {
 	
 	public GradientPolicy()
 	{
-		_feature = new BoardFeature();
+		_feature = new TopFourFeatures();
 		//_feature = new DefaultFeature();
 		_params = new SimpleMatrix(_feature.get_feature_dimension(),1);
-		_params.set(0.0);
+		_params.set(Math.random());
 	
 		_temperature = 100.0;
 		_gamma = 0.1;

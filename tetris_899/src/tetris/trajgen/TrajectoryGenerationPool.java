@@ -1,7 +1,6 @@
 package tetris.trajgen;
 
 import tetris.agent.Trajectory;
-import java.util.Vector;
 import java.util.concurrent.*;
 
 /**

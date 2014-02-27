@@ -21,7 +21,7 @@ public class Trainer {
 		int updateBatchSize = 1; // # steps to run before decreasing step size, temp, gamma, etc.
 		int updateIterationCounter = 0;
 		int maxTrajectoryLength = 1000;
-		int trainerSteps = 3;
+		int trainerSteps = 10;
 		
 		
 		// File to store to
@@ -30,7 +30,7 @@ public class Trainer {
 		GradientPolicy pi;
 		 try {
 			SimpleMatrix paramMatrix = SimpleMatrix.loadCSV(logname);
-			Feature feat = new BoardFeature();
+			Feature feat = new TopFourFeatures();
 			pi = new GradientPolicy(feat, paramMatrix);
 			System.out.println("Param log loaded.");
 		 } catch(Exception e) {
@@ -48,9 +48,9 @@ public class Trainer {
 //		StateGenerator stateGen = new FixedStateGenerator(startState);
 		Policy trainerPi = new RandomPolicy();
 		StateGenerator stateGen = new PolicyStateGenerator(trainerPi, startState, trainerSteps);
-		RewardFunction func1 = new LinesClearedReward(1.0);
+		RewardFunction func1 = new LinesClearedReward(10.0);
 		RewardFunction func2 = new TurnsAliveReward(0.1);
-		RewardFunction func3 = new DeathReward(-10); // Penalty of -100 for dieing
+		RewardFunction func3 = new DeathReward(-100); // Penalty of -100 for dieing
 		RewardFunction comp1 = new CompositeReward(func1, func2);
 		RewardFunction rewardFunc = new CompositeReward(comp1, func3);
 		
@@ -66,11 +66,13 @@ public class Trainer {
 		try {
 			while (true) {
 				for(int i = 0; i < updateBatchSize; i++) {
+					
 					TrajectoryGenerator trajGen = new FixedLengthTrajectoryGenerator(stateGen, pi, rewardFunc, maxTrajectoryLength);
 					Trajectory[] trajectories = trajMachine.generate_trajectories(trajGen, trajectoryBatchSize);
 					
 //					pi.fit_policy(trajectories, startStepSize/(updateIterationCounter+1));
 					pi.fit_policy(trajectories, 1.0);
+					stateGen = new PolicyStateGenerator(pi, startState, (int)Math.random()*trainerSteps);
 				}
 				
 				SimpleMatrix parameters = pi.get_params();

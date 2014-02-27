@@ -15,7 +15,7 @@ import java.util.*;
 
 public class TopFourFeatures implements Feature {
 
-	public int nFeatures = 4 * State.COLS; // + 2*State.COLS + State.ROWS;
+	public int nFeatures = 4 * State.COLS+1; // + 2*State.COLS + State.ROWS;
 
 	public SimpleMatrix get_feature_vector(State temp_s, Action a) {
 		// Prepare to return the features
@@ -50,7 +50,7 @@ public class TopFourFeatures implements Feature {
 		// Height of tallest column, shortest column
 		int[] temp = s.getTop();
 		Arrays.sort(temp);
-		int maxH = temp[temp.length - 1];
+		int maxH = temp[temp.length - 1]-1;
 		// Just store the top 4 rows
 		int ctr=0;
 		for (int i = maxH; i >= maxH - 3; i--) {
@@ -64,6 +64,8 @@ public class TopFourFeatures implements Feature {
 			ctr+=1;
 		}
 		
+		resTemp[0][nFeatures-2] = (double)maxH;
+		resTemp[0][nFeatures-1] = 1.0;
 		SimpleMatrix res = new SimpleMatrix(resTemp);
 		res = res.transpose();
 		// res.print();
