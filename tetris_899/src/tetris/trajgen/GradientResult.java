@@ -14,7 +14,7 @@ public class GradientResult {
 		gradient = grad;
 		covariance = cov;
 		numSteps = steps;
-		reward = reward;
+		reward = rew;
 		numRows = rows;
 	}
 	

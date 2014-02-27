@@ -21,8 +21,8 @@ public class Trainer {
 
 	public static void main(String[] args) {
 		
-		int trajectoryBatchSize = 30; // 2 x num parameters
-		int updateBatchSize = 10; // # steps to run before decreasing step size, temp, gamma, etc.
+		int trajectoryBatchSize = 64; // 2 x num parameters
+		int updateBatchSize = 1; // # steps to run before decreasing step size, temp, gamma, etc.
 		int updateIterationCounter = 0;
 		int maxTrajectoryLength = (int) 1E9;
 		int trainerSteps = 0;
@@ -79,13 +79,13 @@ public class Trainer {
 		double startStepSize = 1.0;
 		double stepSize = startStepSize;
 		
-		double startGamma = 0.95;
+		double startGamma = 0.99;
 		double gammaConstant = -0.01; // 30 iterations to decay to gamma = 0.95
 		pi.set_gamma(startGamma);
 		
-		double startBeta = 0.0; // % of random non-fatal moves
+		double startBeta = 0.01; // % of random non-fatal moves
 		double betaConstant = -0.01;
-		pi.set_beta(startBeta);
+//		pi.set_beta(startBeta);
 		
 		try {
 			while (true) {
@@ -94,8 +94,8 @@ public class Trainer {
 					Trajectory[] trajectories = trajMachine.generate_trajectories(trajGen, trajectoryBatchSize);
 					GradientResult[] gradients = gradMachine.calculate_gradients(pi, trajectories);
 					
-//					pi.fit_policy(trajectories, stepSize);
-					pi.fit_policy(gradients, 1.0);
+//					pi.fit_policy(trajectories, 0.1);
+					pi.fit_policy(gradients, 0.1);
 				}
 				updateIterationCounter++;
 				
@@ -118,7 +118,7 @@ public class Trainer {
 //				pi.set_gamma( nextGamma );
 				
 				double nextBeta = startBeta*Math.exp(updateIterationCounter*betaConstant);
-				pi.set_beta( nextBeta );
+//				pi.set_beta( nextBeta );
 				
 				System.out.format("Ran %d iterations so far. Step Size: %f, Temp: %f, Gamma: %f, Beta:%f%n", 
 				updateIterationCounter, stepSize, nextTemperature, nextGamma, nextBeta);

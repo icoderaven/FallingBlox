@@ -20,7 +20,7 @@ public class GradientPolicy implements Policy {
 	
 	public GradientPolicy()
 	{
-		_feature = new BoardFeature();
+		_feature = new AbbeelFeature();
 		//_feature = new DefaultFeature();
 		_params = new SimpleMatrix(_feature.get_feature_dimension(),1);
 		_params.set(0.0);
@@ -189,27 +189,41 @@ public class GradientPolicy implements Policy {
 //	}
 	
 	public void fit_policy( GradientResult[] results, double step_size ) {
-		SimpleMatrix deltaSum = new SimpleMatrix(_params.numRows(), 1);
-		SimpleMatrix covSum = new SimpleMatrix(_params.numRows(), _params.numRows());
 		
-		deltaSum.set(0);
-		covSum.set(0);
+		SimpleMatrix eligibility_sum = new SimpleMatrix(_params.numRows(), 1);
+		SimpleMatrix reward_sum = new SimpleMatrix(1, 1);
+		SimpleMatrix fisher_sum = new SimpleMatrix(_params.numRows(), _params.numRows());
+		SimpleMatrix grad_est_sum = new SimpleMatrix(_params.numRows(), 1);
 		
 		for( int i = 0; i < results.length; i++ ) {
-			deltaSum = deltaSum.plus( results[i].gradient );
-			covSum = covSum.plus( results[i].covariance );
+			GradientResult res = results[i];
+			SimpleMatrix discountedReward = new SimpleMatrix(_params.numRows(), 1);
+			discountedReward.set(res.reward);
+			fisher_sum = fisher_sum.plus(res.covariance);
+			grad_est_sum = grad_est_sum.plus(res.gradient.elementMult(discountedReward) );
+			eligibility_sum = eligibility_sum.plus(res.gradient);
+			SimpleMatrix r = new SimpleMatrix(1,1);
+			r.set( res.reward );
+			reward_sum = reward_sum.plus(r);
 		}
-		deltaSum = deltaSum.scale( 1.0/results.length );
-		covSum = covSum.scale( 1.0/results.length );
 		
-		covSum = covSum.plus( SimpleMatrix.identity(covSum.numRows()).scale(1E-12) ); // Hack smoothing
-		SimpleMatrix info = covSum.invert();
+		SimpleMatrix fisher = fisher_sum.scale(1.0/results.length);
+		SimpleMatrix fisher_inv = fisher.pseudoInverse();
+		SimpleMatrix grad = grad_est_sum.scale(1.0/results.length);
+		SimpleMatrix eligibility = eligibility_sum.scale(1.0/results.length);
+		SimpleMatrix avg_reward = reward_sum.scale(1.0/results.length);
 		
-		// Scale delta by info matrix
-		SimpleMatrix grad = info.mult(deltaSum);
+		SimpleMatrix tbi = fisher_sum.minus( (eligibility.mult(eligibility.transpose()))  );
+		SimpleMatrix Q = (SimpleMatrix.identity(1).plus( eligibility.transpose().mult( tbi.pseudoInverse() ).mult(eligibility)) ).scale(1.0/results.length);
 		
-		_params = _params.plus(step_size, grad);
-		System.out.format("Step size: %f%n", Math.sqrt(grad.normF()) );
+		SimpleMatrix baseline = Q.mult(avg_reward.minus( eligibility.transpose().mult(fisher_inv.mult(grad) )) );
+		
+		SimpleMatrix natural_grad = fisher_inv.mult(grad.minus(eligibility.mult(baseline)) );
+		//Step params in this direction
+		double step = step_size;
+		_params = _params.plus(step, natural_grad);
+		
+		System.out.format("Step size: %f%n", Math.sqrt(natural_grad.normF()) );
 		
 	}
 	
@@ -217,7 +231,6 @@ public class GradientPolicy implements Policy {
 		//TODO Average gradient over trajectories
 		//Create a container for all the evaluated deltas
 		
-		SimpleMatrix gradSum = new SimpleMatrix(_params.numRows(), 1);
 		SimpleMatrix trajGradSum = new SimpleMatrix(_params.numRows(), 1);
 		SimpleMatrix eligibility_sum = new SimpleMatrix(_params.numRows(), 1);
 		SimpleMatrix reward_sum = new SimpleMatrix(1, 1);
@@ -400,31 +413,20 @@ public class GradientPolicy implements Policy {
 		
 		/// For current piece get all possible actions
 		int[][] moves = s.legalMoves();
-		boolean[] isFatal = new boolean[moves.length]; 
+//		boolean[] isFatal = new boolean[moves.length]; 
 		SimpleMatrix exponents = new SimpleMatrix(moves.length, 1);
 		SimpleMatrix probs = new SimpleMatrix(moves.length, 1);
 
 		// Get all exponents first
-		double sum = 0.0;
 		double maxVal = Double.NEGATIVE_INFINITY;
-		int numValid = 0;
 		for (int a_prime = 0; a_prime < moves.length; a_prime++) {
 			
 			double logLikelihood = calculate_log_likelihood(s, a_prime);
-			isFatal[a_prime] = logLikelihood == Double.NEGATIVE_INFINITY;
-				
 			if(logLikelihood > maxVal) {
 				maxVal = logLikelihood;
 			}
-			
-			if(logLikelihood != Double.NEGATIVE_INFINITY) {
-				sum += logLikelihood;
-				numValid++;
-			}
 			exponents.set(a_prime, logLikelihood);
 		}
-		
-//		exponents.transpose().print();
 		
 		// If all moves are fatal, return uniform
 		if(maxVal == Double.NEGATIVE_INFINITY) {
@@ -432,11 +434,8 @@ public class GradientPolicy implements Policy {
 			return probs.scale( 1.0/probs.elementSum() );
 		}
 		
-		// Calculate probabilities and track sum
-		double meanVal = sum/numValid;
 		for (int a_prime = 0; a_prime < moves.length; a_prime++) {
 			double normalizedExponent = exponents.get(a_prime) - maxVal + 10.0;
-//			double normalizedExponent = exponents.get(a_prime) - meanVal;
 			double likelihood = Math.exp(normalizedExponent);
 			probs.set(a_prime, likelihood);
 		}
@@ -447,7 +446,7 @@ public class GradientPolicy implements Policy {
 		// Additive exploration (epsilon-exploration)
 		SimpleMatrix smoother = new SimpleMatrix(moves.length, 1);
 		for (int a_prime = 0; a_prime < moves.length; a_prime++) {
-			if(!isFatal[a_prime]) {
+			if(probs.get(a_prime) > 0.0) {
 				smoother.set(a_prime, 1.0);
 			}
 		}
@@ -455,16 +454,7 @@ public class GradientPolicy implements Policy {
 		probs = probs.scale(1.0 - _beta);
 		probs = probs.plus(smoother);
 		probs = probs.divide( probs.elementSum() ); // Should be normalized, but just in case
-		
-//		System.out.println("PDF:");
-//		probs.transpose().print();
-//		
-//		System.out.println("Exponents:");
-//		exponents.transpose().print();
-		
-		if(probs.hasUncountable()) {
-			System.out.println("NaN PDF!");
-		}
+
 		
 		return probs;
 	}

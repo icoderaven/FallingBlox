@@ -33,6 +33,11 @@ public class AbbeelFeature implements Feature {
 		int numRowsCleared = s.getRowsCleared();
 		
 		s.makeMove(a);
+		
+		if(s.hasLost()) {
+			return null;
+		}
+		
     	int erodedRows = s.getRowsCleared() - numRowsCleared;
 		
     	// Extract the board and set all nonzero values to 1
